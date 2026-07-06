@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de Cadena de Valor Publico: Servicio de Cuidado Diurno - Cuna Mas</title>
+  <style>
+    :root {
+      --ink: #243142;
+      --muted: #667085;
+      --line: #d9e2ec;
+      --paper: #ffffff;
+      --bg: #f4f7fb;
+      --danger: #b42318;
+      --danger-bg: #fff1f0;
+      --ok: #027a48;
+      --ok-bg: #ecfdf3;
+      --blue: #2563eb;
+      --sky: #0284c7;
+      --teal: #0f766e;
+      --green: #15803d;
+      --light-green: #65a30d;
+      --olive: #64748b;
+      --orange: #ea580c;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 247, 251, 0.96)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%23d8e2ed' stroke-width='1'%3E%3Cpath d='M0 30h140M0 100h140M35 0v140M105 0v140'/%3E%3Ccircle cx='35' cy='30' r='5' fill='%23f2b56b' stroke='none'/%3E%3Ccircle cx='105' cy='100' r='5' fill='%2370c3c4' stroke='none'/%3E%3C/g%3E%3C/svg%3E");
+      min-height: 100vh;
+    }
+
+    .app-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+
+    .hero {
+      min-height: 300px;
+      display: grid;
+      grid-template-columns: 1.45fr 0.75fr;
+      gap: 24px;
+      align-items: stretch;
+      padding: 30px;
+      border-bottom: 1px solid rgba(36, 49, 66, 0.12);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 4.2rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+      max-width: 900px;
+    }
+
+    .subtitle {
+      margin: 16px 0 0;
+      color: #3f536b;
+      font-size: 1.13rem;
+      line-height: 1.55;
+      max-width: 780px;
+    }
+
+    .case-panel {
+      align-self: end;
+      border-left: 5px solid var(--teal);
+      padding: 18px 0 18px 18px;
+      color: #344054;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .case-panel strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 18px 0;
+      padding: 12px 16px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+      position: sticky;
+      top: 8px;
+      z-index: 10;
+    }
+
+    .score {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .score .pill {
+      min-width: 76px;
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      color: #fff;
+      background: #243142;
+    }
+
+    .progress-wrap {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 6px;
+    }
+
+    .progress-track {
+      height: 10px;
+      background: #e6edf5;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--blue), var(--teal), var(--orange));
+      transition: width 220ms ease;
+    }
+
+    .board {
+      overflow-x: auto;
+      padding: 16px 4px 22px;
+    }
+
+    .stations {
+      min-width: 980px;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      align-items: stretch;
+      position: relative;
+    }
+
+    .station {
+      border: 1px solid var(--line);
+      border-top: 6px solid var(--station-color);
+      background: var(--paper);
+      border-radius: 8px;
+      min-height: 124px;
+      padding: 12px;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      opacity: 0.55;
+      transition: transform 160ms ease, opacity 160ms ease, box-shadow 160ms ease;
+    }
+
+    .station.active,
+    .station.done {
+      opacity: 1;
+    }
+
+    .station.active {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+    }
+
+    .station.done {
+      background: linear-gradient(180deg, #fff, #f7fbff);
+    }
+
+    .station .num {
+      display: inline-grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--station-color);
+      color: white;
+      font-weight: 800;
+      margin-bottom: 9px;
+    }
+
+    .station h2 {
+      margin: 0 0 7px;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .station p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.35;
+    }
+
+    .game-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .phase-card,
+    .side-card,
+    .final-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    }
+
+    .phase-card {
+      padding: 24px;
+      border-top: 8px solid var(--station-color);
+    }
+
+    .phase-kicker {
+      color: var(--station-color);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0;
+      font-size: 0.8rem;
+    }
+
+    .phase-card h2 {
+      margin: 8px 0 10px;
+      font-size: 1.55rem;
+      line-height: 1.2;
+    }
+
+    .instruction {
+      margin: 0 0 18px;
+      color: #41546c;
+      font-size: 1.02rem;
+      line-height: 1.5;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+    }
+
+    .option {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: start;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      border: 1px solid #d7e0ea;
+      background: #fff;
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 13px 14px;
+      cursor: pointer;
+      font: inherit;
+      line-height: 1.38;
+      transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+
+    .option:hover {
+      border-color: var(--station-color);
+      background: #f8fbff;
+    }
+
+    .option.selected {
+      border-color: var(--station-color);
+      background: color-mix(in srgb, var(--station-color) 11%, white);
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 2px solid #9aa8ba;
+      border-radius: 6px;
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 900;
+      margin-top: 1px;
+    }
+
+    .single .mark {
+      border-radius: 50%;
+    }
+
+    .option.selected .mark {
+      background: var(--station-color);
+      border-color: var(--station-color);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button.action {
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      color: white;
+      background: var(--station-color);
+      min-height: 46px;
+    }
+
+    button.action.secondary {
+      color: var(--ink);
+      background: #eef3f8;
+      border: 1px solid #d7e0ea;
+    }
+
+    button.action:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .feedback {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 8px;
+      line-height: 1.45;
+    }
+
+    .feedback.ok {
+      display: block;
+      color: var(--ok);
+      background: var(--ok-bg);
+      border: 1px solid #abefc6;
+    }
+
+    .feedback.bad {
+      display: block;
+      color: var(--danger);
+      background: var(--danger-bg);
+      border: 1px solid #fecdca;
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 12px;
+      padding: 14px 16px;
+      border-left: 5px solid var(--station-color);
+      background: #f7fafc;
+      color: #475467;
+      line-height: 1.45;
+    }
+
+    .side-card {
+      padding: 18px;
+    }
+
+    .side-card h3 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+    }
+
+    .learning-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .learning-list li {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      align-items: start;
+      color: #475467;
+      line-height: 1.35;
+      font-size: 0.93rem;
+    }
+
+    .icon {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: #eef6ff;
+    }
+
+    .final-card {
+      display: none;
+      padding: 26px;
+      margin-top: 20px;
+      border-top: 8px solid var(--orange);
+    }
+
+    .certificate {
+      background: linear-gradient(135deg, #fff7ed, #f0fdfa);
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .certificate h2 {
+      margin: 0 0 8px;
+      font-size: 1.6rem;
+    }
+
+    .value-chain {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .chain-item {
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--item-color);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .chain-item h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: var(--item-color);
+    }
+
+    .chain-item ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #475467;
+      line-height: 1.45;
+    }
+
+    .reflection {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .reflection h3 {
+      margin: 0 0 10px;
+    }
+
+    .reflection ol {
+      margin: 0;
+      padding-left: 22px;
+      color: #475467;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 920px) {
+      .hero,
+      .game-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        position: static;
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .value-chain {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app-shell {
+        width: min(100% - 20px, 1180px);
+        padding-top: 10px;
+      }
+
+      .hero,
+      .phase-card,
+      .final-card {
+        padding: 18px;
+      }
+
+      .option {
+        grid-template-columns: 26px 1fr;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero" aria-labelledby="main-title">
+      <div>
+        <h1 id="main-title">Simulador de Cadena de Valor Publico: Servicio de Cuidado Diurno - Cuna Mas</h1>
+        <p class="subtitle">Del insumo al impacto: como los recursos publicos se transforman en desarrollo infantil temprano.</p>
+      </div>
+      <aside class="case-panel">
+        <strong>Caso de estudio</strong>
+        Unidad Territorial Lima Metropolitana organiza un CIAI en zona urbana focalizada para atender a ninas y ninos de 6 a 36 meses durante 8 horas diarias, de lunes a viernes.
+      </aside>
+    </section>
+
+    <section class="topbar" aria-label="avance del simulador">
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Barra de progreso</span>
+          <span id="phase-count">Fase 1 de 7</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+      <div class="score" aria-live="polite">
+        Puntaje
+        <span class="pill"><span id="score">0</span>/70</span>
+      </div>
+    </section>
+
+    <section class="board" aria-label="tablero de estaciones">
+      <div class="stations" id="stations"></div>
+    </section>
+
+    <section class="game-panel" id="game-panel">
+      <article class="phase-card" id="phase-card">
+        <div class="phase-kicker" id="phase-kicker"></div>
+        <h2 id="phase-title"></h2>
+        <p class="instruction" id="instruction"></p>
+        <div class="options" id="options"></div>
+        <div class="controls">
+          <button class="action" id="validate-btn" type="button">Validar respuesta</button>
+          <button class="action secondary" id="retry-btn" type="button" hidden>Intentar nuevamente</button>
+          <button class="action secondary" id="explain-btn" type="button" hidden>Ver explicacion</button>
+          <button class="action" id="next-btn" type="button" hidden>Siguiente fase</button>
+        </div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        <div class="explanation" id="explanation"></div>
+      </article>
+
+      <aside class="side-card">
+        <h3>Objetivo de aprendizaje</h3>
+        <ul class="learning-list">
+          <li><span class="icon">🏛️</span><span>Relacionar insumos, actividades, productos, resultados e impacto dentro del Programa Presupuestal 0098.</span></li>
+          <li><span class="icon">👧</span><span>Identificar como el Servicio de Cuidado Diurno contribuye al desarrollo infantil temprano.</span></li>
+          <li><span class="icon">🎯</span><span>Usar la cadena de valor publico para razonar sobre calidad del gasto y resultados.</span></li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="final-card" id="final-card" aria-live="polite">
+      <div class="certificate">
+        <h2>Has construido correctamente la cadena de valor publico del Servicio de Cuidado Diurno de Cuna Mas.</h2>
+        <p>Tu puntaje final es <strong><span id="final-score">0</span>/70</strong>. La cadena muestra como los recursos publicos se transforman progresivamente en valor publico para la primera infancia.</p>
+      </div>
+      <h2>Cadena de valor construida</h2>
+      <div class="value-chain" id="value-chain"></div>
+      <div class="reflection">
+        <h3>Reflexion para el estudiante</h3>
+        <ol>
+          <li>¿Por que no basta con ejecutar actividades si no se logra un cambio en el desarrollo infantil?</li>
+          <li>¿Que diferencia existe entre producto, resultado especifico e impacto?</li>
+          <li>¿Como ayuda la cadena de valor publico a mejorar la calidad del gasto?</li>
+        </ol>
+      </div>
+      <div class="controls">
+        <button class="action secondary" id="restart-btn" type="button">Reiniciar simulador</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const phases = [
+      {
+        name: "Insumos",
+        color: "#2563eb",
+        icon: "🧩",
+        choose: 3,
+        instruction: "Selecciona 3 insumos indispensables para que el Servicio de Cuidado Diurno pueda brindar atencion integral a ninas y ninos de 6 a 36 meses en el CIAI.",
+        options: [
+          "Madres cuidadoras capacitadas.",
+          "Local acondicionado y equipado para el cuidado diurno.",
+          "Alimentos y raciones para refrigerio, almuerzo y media tarde.",
+          "Facilitadoras para visitas domiciliarias rurales.",
+          "Equipo de computo para la sede central.",
+          "Expedientes de arbitraje institucional.",
+          "Materiales de difusion para prensa.",
+          "Vehiculos para supervision nacional.",
+          "Documentos de tramite administrativo interno.",
+          "Convenios de cooperacion internacional."
+        ],
+        correct: [0, 1, 2],
+        ok: "Correcto. Estos insumos permiten operar directamente el Servicio de Cuidado Diurno: personal comunitario capacitado, infraestructura adecuada y alimentacion para la atencion integral de ninas y ninos.",
+        bad: "Revisa la naturaleza del servicio. El Cuidado Diurno requiere insumos directamente vinculados con la atencion diaria de ninas y ninos: personas cuidadoras, local adecuado y alimentacion. Algunos elementos pueden apoyar la gestion, pero no son insumos centrales del servicio especifico.",
+        explanation: "En presupuesto por resultados, los insumos son recursos necesarios para producir bienes o servicios. En este caso, deben estar conectados directamente con la atencion diaria en el CIAI."
+      },
+      {
+        name: "Procesos",
+        color: "#0284c7",
+        icon: "⚙️",
+        choose: 2,
+        instruction: "Selecciona 2 procesos o actividades directamente relacionados con la prestacion del Servicio de Cuidado Diurno descrito en el caso.",
+        options: [
+          "Gestion de la atencion integral a ninas y ninos en los Centros Cuna Mas del Servicio de Cuidado Diurno.",
+          "Gestion de infraestructura y equipamiento de locales para el servicio.",
+          "Visitas domiciliarias a familias en zonas rurales.",
+          "Sesiones de socializacion e interaprendizaje.",
+          "Gestion de asuntos juridicos.",
+          "Gestion de comunicaciones.",
+          "Gestion de contabilidad.",
+          "Gestion de control institucional.",
+          "Gestion de archivos y tramite documentario.",
+          "Gestion de inversiones."
+        ],
+        correct: [0, 1],
+        ok: "Correcto. El caso se refiere al Servicio de Cuidado Diurno en un CIAI. Por ello, los procesos clave son la atencion integral diaria a ninas y ninos y la gestion de infraestructura y equipamiento del local donde se presta el servicio.",
+        bad: "Ten cuidado con confundir modalidades. Las visitas domiciliarias y sesiones grupales corresponden principalmente al Servicio de Acompanamiento a Familias. En este caso, el servicio descrito es Cuidado Diurno en un centro de atencion.",
+        explanation: "Los procesos transforman insumos en productos. En Cuidado Diurno, las actividades criticas son operar la atencion integral y asegurar condiciones fisicas adecuadas para el servicio."
+      },
+      {
+        name: "Producto",
+        color: "#0f766e",
+        icon: "🏫",
+        choose: 1,
+        instruction: "Selecciona el producto presupuestal que corresponde al caso.",
+        options: [
+          "Producto 3000584: Ninas y ninos de 6 a 36 meses de edad que viven en situacion de pobreza y extrema pobreza en zonas urbanas reciben atencion integral en servicio de cuidado diurno.",
+          "Producto 3000314: Familias acceden a acompanamiento en cuidado y aprendizaje de sus ninas y ninos menores de 36 meses en zonas rurales.",
+          "Producto 3000001: Acciones comunes de gestion del programa.",
+          "Producto: Personas adultas mayores reciben subvencion monetaria.",
+          "Producto: Estudiantes de instituciones educativas publicas reciben alimentacion escolar."
+        ],
+        correct: [0],
+        ok: "Correcto. El producto 3000584 corresponde al Servicio de Cuidado Diurno y esta dirigido a ninas y ninos de 6 a 36 meses en situacion de pobreza o pobreza extrema que reciben atencion integral.",
+        bad: "Revisa la poblacion y modalidad del caso. El caso no trata de familias rurales con visitas domiciliarias, sino de ninas y ninos atendidos en Centros Cuna Mas mediante cuidado diurno.",
+        explanation: "El producto es el bien o servicio entregado a la poblacion objetivo. Aqui no se evalua aun el cambio logrado, sino la prestacion efectiva del servicio."
+      },
+      {
+        name: "Resultado especifico",
+        color: "#15803d",
+        icon: "📈",
+        choose: 1,
+        instruction: "Selecciona el resultado especifico del Programa Presupuestal Cuna Mas relacionado con el caso.",
+        options: [
+          "Mejora en el nivel de desarrollo infantil de ninas y ninos menores de 36 meses que viven en situacion de pobreza y pobreza extrema.",
+          "Incremento de la recaudacion tributaria en zonas urbanas.",
+          "Mejora de la empleabilidad de jovenes y adultos.",
+          "Reduccion de la inseguridad ciudadana en centros poblados urbanos.",
+          "Incremento de la productividad agropecuaria familiar."
+        ],
+        correct: [0],
+        ok: "Correcto. El resultado especifico del Programa Cuna Mas se orienta a mejorar el desarrollo infantil en dimensiones fisica, cognitiva, lenguaje y socioemocional.",
+        bad: "Recuerda que el Programa Cuna Mas no tiene como resultado especifico empleo, seguridad ciudadana o productividad. Su resultado especifico esta centrado en el desarrollo infantil temprano de ninas y ninos menores de 36 meses.",
+        explanation: "El resultado especifico expresa el cambio esperado en la poblacion objetivo atribuible al programa presupuestal."
+      },
+      {
+        name: "Resultado intermedio",
+        color: "#65a30d",
+        icon: "🌱",
+        choose: 1,
+        instruction: "Selecciona el resultado intermedio que se deriva de una prestacion adecuada y sostenida del Servicio de Cuidado Diurno.",
+        options: [
+          "Fortalecimiento de las condiciones fisicas, cognitivas, afectivas y socioemocionales que favorecen el desarrollo infantil temprano.",
+          "Incremento de la inversion privada regional.",
+          "Mejora de la infraestructura vial nacional.",
+          "Aumento de la formalizacion laboral adulta.",
+          "Incremento de la recaudacion municipal."
+        ],
+        correct: [0],
+        ok: "Correcto. El resultado intermedio expresa el cambio que se espera lograr antes del resultado final: mejores condiciones para el desarrollo fisico, cognitivo, afectivo y socioemocional de la primera infancia.",
+        bad: "Revisa la logica causal. El resultado intermedio debe estar vinculado con los cambios en ninas y ninos atendidos por Cuna Mas, no con efectos economicos o administrativos externos al servicio.",
+        explanation: "Un resultado intermedio conecta la entrega del producto con cambios progresivos que hacen posible el resultado final."
+      },
+      {
+        name: "Resultado final",
+        color: "#64748b",
+        icon: "🎯",
+        choose: 1,
+        instruction: "Selecciona el resultado final al que contribuye el Servicio de Cuidado Diurno de Cuna Mas.",
+        options: [
+          "Mejorar el desarrollo infantil temprano para asegurar la inclusion social.",
+          "Aumentar la productividad de jovenes rurales.",
+          "Mejorar la calidad de vida de personas adultas mayores.",
+          "Reducir la brecha de infraestructura vial.",
+          "Fortalecer la seguridad ciudadana."
+        ],
+        correct: [0],
+        ok: "Correcto. El resultado final se vincula con la Politica Nacional de Desarrollo e Inclusion Social al 2030, especificamente con el desarrollo infantil temprano y la inclusion social.",
+        bad: "Recuerda que el caso se ubica en la primera infancia. El resultado final esperado no es productividad, infraestructura o seguridad ciudadana, sino desarrollo infantil temprano para la inclusion social.",
+        explanation: "El resultado final refleja el cambio de mayor nivel al que contribuye la intervencion dentro de una politica publica."
+      },
+      {
+        name: "Impacto",
+        color: "#ea580c",
+        icon: "🏁",
+        choose: 1,
+        instruction: "Selecciona el impacto de largo plazo al que contribuye la intervencion de Cuna Mas.",
+        options: [
+          "Contribuir a reducir la exclusion social que genera pobreza a lo largo del ciclo de vida y mejorar la calidad de vida de la poblacion.",
+          "Incrementar la produccion minera nacional.",
+          "Mejorar la ejecucion de obras de transporte.",
+          "Aumentar la recaudacion del impuesto predial.",
+          "Reducir exclusivamente los costos administrativos del programa."
+        ],
+        correct: [0],
+        ok: "Correcto. El impacto trasciende el servicio inmediato. Al fortalecer el desarrollo infantil temprano, Cuna Mas contribuye a romper la transmision intergeneracional de la pobreza y a mejorar la inclusion social.",
+        bad: "Piensa en el impacto publico de largo plazo. Cuna Mas no solo entrega un servicio; busca contribuir a reducir la exclusion social y la pobreza desde la primera infancia.",
+        explanation: "El impacto es el efecto publico de largo plazo. En esta cadena, el desarrollo infantil temprano aporta a inclusion social y calidad de vida durante el ciclo de vida."
+      }
+    ];
+
+    const finalChain = [
+      { title: "Insumos", color: "#2563eb", items: ["Madres cuidadoras capacitadas.", "Local acondicionado y equipado.", "Alimentos y raciones."] },
+      { title: "Procesos", color: "#0284c7", items: ["Gestion de infraestructura y equipamiento de locales para el servicio.", "Gestion de la atencion integral a ninas y ninos en los Centros Cuna Mas del Servicio de Cuidado Diurno."] },
+      { title: "Producto", color: "#0f766e", items: ["Producto 3000584: Ninas y ninos de 6 a 36 meses en situacion de pobreza y extrema pobreza reciben atencion integral en servicio de cuidado diurno."] },
+      { title: "Resultado especifico", color: "#15803d", items: ["Mejora en el nivel de desarrollo infantil de ninas y ninos menores de 36 meses en situacion de pobreza y pobreza extrema."] },
+      { title: "Resultado intermedio", color: "#65a30d", items: ["Fortalecimiento de las condiciones fisicas, cognitivas, afectivas y socioemocionales que favorecen el desarrollo infantil temprano."] },
+      { title: "Resultado final", color: "#64748b", items: ["Mejorar el desarrollo infantil temprano para asegurar la inclusion social."] },
+      { title: "Impacto", color: "#ea580c", items: ["Contribuir a reducir la exclusion social que genera pobreza a lo largo del ciclo de vida y mejorar la calidad de vida de la poblacion."] }
+    ];
+
+    let current = 0;
+    let score = 0;
+    let selected = new Set();
+    let locked = false;
+
+    const stationsEl = document.getElementById("stations");
+    const phaseCard = document.getElementById("phase-card");
+    const phaseKicker = document.getElementById("phase-kicker");
+    const phaseTitle = document.getElementById("phase-title");
+    const instruction = document.getElementById("instruction");
+    const optionsEl = document.getElementById("options");
+    const feedback = document.getElementById("feedback");
+    const explanation = document.getElementById("explanation");
+    const validateBtn = document.getElementById("validate-btn");
+    const retryBtn = document.getElementById("retry-btn");
+    const explainBtn = document.getElementById("explain-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const scoreEl = document.getElementById("score");
+    const finalScoreEl = document.getElementById("final-score");
+    const phaseCount = document.getElementById("phase-count");
+    const progressFill = document.getElementById("progress-fill");
+    const gamePanel = document.getElementById("game-panel");
+    const finalCard = document.getElementById("final-card");
+    const valueChain = document.getElementById("value-chain");
+
+    function renderStations() {
+      stationsEl.innerHTML = phases.map((phase, index) => {
+        const state = index < current ? "done" : index === current ? "active" : "";
+        return `
+          <div class="station ${state}" style="--station-color:${phase.color}">
+            <span class="num">${index + 1}</span>
+            <h2>${phase.icon} ${phase.name}</h2>
+            <p>${index < current ? "Completada" : index === current ? "Fase actual" : "Bloqueada hasta completar la fase anterior"}</p>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderPhase() {
+      const phase = phases[current];
+      selected = new Set();
+      locked = false;
+      phaseCard.style.setProperty("--station-color", phase.color);
+      phaseKicker.textContent = `Fase ${current + 1} de 7`;
+      phaseTitle.textContent = `${phase.icon} ${phase.name}`;
+      instruction.textContent = phase.instruction;
+      phaseCount.textContent = `Fase ${current + 1} de 7`;
+      progressFill.style.width = `${(current / phases.length) * 100}%`;
+      feedback.className = "feedback";
+      feedback.textContent = "";
+      explanation.style.display = "none";
+      explanation.textContent = phase.explanation;
+      validateBtn.hidden = false;
+      retryBtn.hidden = true;
+      explainBtn.hidden = true;
+      nextBtn.hidden = true;
+
+      const optionMode = phase.choose === 1 ? "single" : "multiple";
+      optionsEl.className = `options ${optionMode}`;
+      optionsEl.innerHTML = phase.options.map((text, index) => `
+        <button class="option" type="button" data-index="${index}" aria-pressed="false">
+          <span class="mark"></span>
+          <span>${String.fromCharCode(65 + index)}. ${text}</span>
+        </button>
+      `).join("");
+      renderStations();
+    }
+
+    function updateScore(value) {
+      score = Math.max(0, Math.min(70, score + value));
+      scoreEl.textContent = score;
+    }
+
+    function toggleOption(button) {
+      if (locked) return;
+      const phase = phases[current];
+      const index = Number(button.dataset.index);
+
+      if (phase.choose === 1) {
+        selected.clear();
+        document.querySelectorAll(".option").forEach(option => {
+          option.classList.remove("selected");
+          option.setAttribute("aria-pressed", "false");
+          option.querySelector(".mark").textContent = "";
+        });
+        selected.add(index);
+      } else if (selected.has(index)) {
+        selected.delete(index);
+      } else if (selected.size < phase.choose) {
+        selected.add(index);
+      }
+
+      document.querySelectorAll(".option").forEach(option => {
+        const optionIndex = Number(option.dataset.index);
+        const isSelected = selected.has(optionIndex);
+        option.classList.toggle("selected", isSelected);
+        option.setAttribute("aria-pressed", String(isSelected));
+        option.querySelector(".mark").textContent = isSelected ? "✓" : "";
+      });
+    }
+
+    function sameSelection(a, b) {
+      return a.length === b.length && a.every(value => b.includes(value));
+    }
+
+    function validate() {
+      const phase = phases[current];
+      if (selected.size !== phase.choose) {
+        feedback.className = "feedback bad";
+        feedback.textContent = `Debes seleccionar exactamente ${phase.choose} alternativa${phase.choose > 1 ? "s" : ""} para validar esta fase.`;
+        return;
+      }
+
+      locked = true;
+      const chosen = [...selected].sort((a, b) => a - b);
+      const isCorrect = sameSelection(chosen, phase.correct);
+      validateBtn.hidden = true;
+      explainBtn.hidden = false;
+
+      if (isCorrect) {
+        updateScore(10);
+        feedback.className = "feedback ok";
+        feedback.textContent = phase.ok;
+        nextBtn.hidden = false;
+      } else {
+        updateScore(-2);
+        feedback.className = "feedback bad";
+        feedback.textContent = phase.bad;
+        retryBtn.hidden = false;
+      }
+    }
+
+    function retry() {
+      renderPhase();
+    }
+
+    function showExplanation() {
+      explanation.style.display = explanation.style.display === "block" ? "none" : "block";
+    }
+
+    function nextPhase() {
+      if (current < phases.length - 1) {
+        current += 1;
+        renderPhase();
+      } else {
+        finish();
+      }
+    }
+
+    function finish() {
+      current = phases.length;
+      progressFill.style.width = "100%";
+      phaseCount.textContent = "Completado";
+      finalScoreEl.textContent = score;
+      gamePanel.style.display = "none";
+      finalCard.style.display = "block";
+      renderStations();
+      valueChain.innerHTML = finalChain.map(item => `
+        <article class="chain-item" style="--item-color:${item.color}">
+          <h3>${item.title}</h3>
+          <ul>${item.items.map(text => `<li>${text}</li>`).join("")}</ul>
+        </article>
+      `).join("");
+      finalCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function restart() {
+      current = 0;
+      score = 0;
+      scoreEl.textContent = "0";
+      gamePanel.style.display = "grid";
+      finalCard.style.display = "none";
+      renderPhase();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    optionsEl.addEventListener("click", event => {
+      const button = event.target.closest(".option");
+      if (button) toggleOption(button);
+    });
+    validateBtn.addEventListener("click", validate);
+    retryBtn.addEventListener("click", retry);
+    explainBtn.addEventListener("click", showExplanation);
+    nextBtn.addEventListener("click", nextPhase);
+    document.getElementById("restart-btn").addEventListener("click", restart);
+
+    renderPhase();
+  </script>
+</body>
+</html>
