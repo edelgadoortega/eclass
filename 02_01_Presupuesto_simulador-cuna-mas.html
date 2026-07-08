@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulador de Decisiones Presupuestarias: Caso Cuna Más</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #eef4fb;
+      --ink: #172033;
+      --muted: #5f6f86;
+      --line: #d9e2ef;
+      --primary: #0b5e8e;
+      --primary-2: #164b7b;
+      --accent: #b77a12;
+      --ok: #167247;
+      --ok-bg: #e6f5ed;
+      --warn: #a24e10;
+      --warn-bg: #fff0df;
+      --shadow: 0 18px 50px rgba(24, 41, 70, 0.12);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        linear-gradient(180deg, #eaf1f8 0%, rgba(244, 247, 251, 0) 360px),
+        var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: #0b3f62;
+      color: #fff;
+      border-bottom: 5px solid var(--accent);
+    }
+
+    .topbar-inner {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 18px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: #fff;
+      color: #0b3f62;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      letter-spacing: 0;
+      flex: 0 0 auto;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 0.98rem;
+      line-height: 1.2;
+    }
+
+    .brand span {
+      display: block;
+      color: #cfe2f2;
+      font-size: 0.86rem;
+      margin-top: 3px;
+    }
+
+    .pill {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #eaf6ff;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      white-space: nowrap;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 34px 0 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+
+    .hero-copy {
+      padding: 16px 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.03;
+      letter-spacing: 0;
+      color: #10253e;
+      max-width: 900px;
+    }
+
+    .subtitle {
+      margin: 16px 0 0;
+      font-size: clamp(1rem, 2vw, 1.24rem);
+      color: #42546d;
+      line-height: 1.5;
+      max-width: 780px;
+    }
+
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      display: grid;
+      align-content: center;
+      gap: 16px;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric {
+      background: var(--surface-2);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-height: 86px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 1.45rem;
+      color: var(--primary-2);
+      line-height: 1.15;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel,
+    .question-card,
+    .case-card,
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel h2,
+    .case-card h2,
+    .question-card h2,
+    .result-card h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0;
+      color: #12345a;
+    }
+
+    .progress-shell {
+      margin-top: 14px;
+      height: 11px;
+      background: #dbe6f3;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), #1f8ab8);
+      transition: width 240ms ease;
+    }
+
+    .section-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .section-step {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 11px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 0.9rem;
+      line-height: 1.25;
+    }
+
+    .section-step.active {
+      border-color: rgba(11, 94, 142, 0.55);
+      background: #e9f4fb;
+      color: #0e4771;
+      font-weight: 700;
+    }
+
+    .section-step.done {
+      color: var(--ok);
+      background: #eff9f4;
+      border-color: #bee5ce;
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .case-card {
+      padding: 24px;
+      margin-bottom: 18px;
+      border-left: 5px solid var(--primary);
+    }
+
+    .case-card p {
+      color: #40506a;
+      line-height: 1.65;
+      margin: 14px 0 0;
+    }
+
+    .question-card {
+      padding: 24px;
+      display: none;
+    }
+
+    .question-card.active,
+    .result-card.active {
+      display: block;
+    }
+
+    .kicker {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 14px;
+    }
+
+    .question-text {
+      font-size: 1.28rem;
+      line-height: 1.45;
+      margin: 12px 0 20px;
+      color: #172033;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin: 0 0 18px;
+    }
+
+    .option {
+      width: 100%;
+      text-align: left;
+      border: 1px solid #cbd8e8;
+      background: #fff;
+      color: var(--ink);
+      border-radius: var(--radius);
+      padding: 14px 15px;
+      font: inherit;
+      line-height: 1.35;
+      cursor: pointer;
+      min-height: 50px;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .option:hover {
+      border-color: var(--primary);
+      background: #f5fbff;
+    }
+
+    .option.selected {
+      border-color: var(--primary);
+      background: #e7f4fb;
+      box-shadow: inset 4px 0 0 var(--primary);
+      font-weight: 700;
+    }
+
+    .option.correct {
+      border-color: var(--ok);
+      background: var(--ok-bg);
+      box-shadow: inset 4px 0 0 var(--ok);
+    }
+
+    .option.incorrect {
+      border-color: var(--warn);
+      background: var(--warn-bg);
+      box-shadow: inset 4px 0 0 var(--warn);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button.primary,
+    button.secondary {
+      border: 0;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      min-height: 44px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    button.primary:hover {
+      background: var(--primary-2);
+    }
+
+    button.secondary {
+      background: #e8eef6;
+      color: #16344f;
+    }
+
+    button.secondary:hover {
+      background: #dce6f1;
+    }
+
+    button:disabled {
+      opacity: 0.52;
+      cursor: not-allowed;
+    }
+
+    .feedback {
+      display: none;
+      margin-top: 18px;
+      border-radius: var(--radius);
+      padding: 15px 16px;
+      line-height: 1.5;
+      border: 1px solid transparent;
+    }
+
+    .feedback strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .feedback.ok {
+      display: block;
+      color: #0f5a39;
+      background: var(--ok-bg);
+      border-color: #bee5ce;
+    }
+
+    .feedback.warn {
+      display: block;
+      color: #7a390c;
+      background: var(--warn-bg);
+      border-color: #f2c394;
+    }
+
+    .result-card {
+      display: none;
+      padding: 28px;
+      text-align: center;
+    }
+
+    .score {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 22px auto;
+      max-width: 720px;
+    }
+
+    .score-item {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 12px;
+    }
+
+    .score-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+
+    .score-item strong {
+      display: block;
+      font-size: 1.75rem;
+      color: var(--primary-2);
+    }
+
+    .result-message {
+      color: #3d506a;
+      line-height: 1.6;
+      max-width: 760px;
+      margin: 0 auto 20px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 880px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main,
+      .topbar-inner {
+        width: min(100% - 22px, 1120px);
+      }
+
+      .case-card,
+      .question-card,
+      .result-card,
+      .panel,
+      .status-card {
+        padding: 16px;
+      }
+
+      .metric-row,
+      .score {
+        grid-template-columns: 1fr;
+      }
+
+      .kicker {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .question-text {
+        font-size: 1.08rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="mark">SN</div>
+        <div>
+          <strong>Sistema Nacional de Presupuesto Público</strong>
+          <span>Capacitación aplicada a un caso de Cuna Más</span>
+        </div>
+      </div>
+      <div class="pill">Año Fiscal 2027</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="main-title">
+      <div class="hero-copy">
+        <h1 id="main-title">Simulador de Decisiones Presupuestarias: Caso Cuna Más</h1>
+        <p class="subtitle">Actores, fases, ingresos, gastos, clasificadores y categorías de gasto</p>
+      </div>
+      <aside class="status-card" aria-label="Estado del simulador">
+        <div class="metric-row">
+          <div class="metric">
+            <span>Pregunta actual</span>
+            <strong id="currentMetric">1 / 26</strong>
+          </div>
+          <div class="metric">
+            <span>Puntaje</span>
+            <strong id="scoreMetric">0</strong>
+          </div>
+        </div>
+        <div>
+          <div class="kicker">
+            <span>Avance total</span>
+            <span id="progressText">0%</span>
+          </div>
+          <div class="progress-shell" aria-hidden="true">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <aside class="sidebar">
+        <div class="panel">
+          <h2>Secciones</h2>
+          <div class="section-list" id="sectionList"></div>
+        </div>
+      </aside>
+
+      <div class="content">
+        <article class="case-card" id="caseCard">
+          <h2>Presentación del caso</h2>
+          <p>
+            El Programa Nacional Cuna Más busca fortalecer la atención de niñas y niños menores de 36 meses en zonas urbanas y rurales con alta vulnerabilidad. Para el Año Fiscal 2027, se proyecta ampliar la cobertura del servicio en 12 distritos priorizados, mejorar la calidad de la atención, fortalecer la capacitación de facilitadoras y adquirir equipamiento básico para locales de atención infantil.
+          </p>
+          <p>
+            La entidad identifica la necesidad de financiar alimentación, materiales educativos, contratación de personal operativo, capacitación de actores comunales, mantenimiento de locales, adquisición de mobiliario infantil y equipamiento básico para nuevos puntos de atención. La programación debe articularse con productos, metas físicas y resultados esperados. En este contexto intervienen la DGPP, el Titular de la Entidad, la Oficina de Presupuesto, la Unidad Ejecutora y el Responsable del Programa Presupuestal.
+          </p>
+        </article>
+
+        <article class="question-card active" id="questionCard" aria-live="polite">
+          <div class="kicker">
+            <span id="sectionLabel">Sección</span>
+            <span id="questionCounter">Pregunta 1 de 26</span>
+          </div>
+          <h2 id="questionTitle">Decisión presupuestaria</h2>
+          <p class="question-text" id="questionText"></p>
+          <div class="options" id="options"></div>
+          <div class="actions">
+            <button class="primary" id="checkBtn" type="button">Verificar respuesta</button>
+            <button class="secondary" id="nextBtn" type="button" disabled>Siguiente</button>
+          </div>
+          <div class="feedback" id="feedback"></div>
+        </article>
+
+        <article class="result-card" id="resultCard" aria-live="polite">
+          <h2>Resultado final</h2>
+          <div class="score">
+            <div class="score-item">
+              <span>Puntaje total</span>
+              <strong id="finalScore">0 / 26</strong>
+            </div>
+            <div class="score-item">
+              <span>Porcentaje</span>
+              <strong id="finalPercent">0%</strong>
+            </div>
+            <div class="score-item">
+              <span>Nivel</span>
+              <strong id="finalLevel">-</strong>
+            </div>
+          </div>
+          <p class="result-message" id="finalMessage"></p>
+          <button class="primary" id="restartBtn" type="button">Reiniciar simulador</button>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sections = [
+      "Actores del Sistema Nacional de Presupuesto Público",
+      "Fases del proceso presupuestario",
+      "Ingreso público o gasto público",
+      "Clasificadores presupuestarios",
+      "Categorías de gasto"
+    ];
+
+    const questions = [
+      {
+        section: 0,
+        text: "Cuna Más necesita conocer qué directiva regula la ejecución presupuestaria del año fiscal. ¿Qué actor corresponde?",
+        options: ["Unidad Ejecutora", "Dirección General de Presupuesto Público", "Responsable del Programa Presupuestal", "Oficina de Presupuesto"],
+        answer: "Dirección General de Presupuesto Público",
+        feedback: "La DGPP es el ente rector y emite directivas y normas complementarias para el funcionamiento del Sistema Nacional de Presupuesto Público."
+      },
+      {
+        section: 0,
+        text: "El Programa requiere definir las prioridades de gasto institucional para ampliar la atención en 12 distritos. ¿Quién debe conducir esa decisión?",
+        options: ["Titular de la Entidad", "Unidad Ejecutora", "DGPP", "Centro de costos"],
+        answer: "Titular de la Entidad",
+        feedback: "El Titular de la Entidad conduce la gestión del presupuesto institucional y determina prioridades de gasto conforme a los objetivos estratégicos."
+      },
+      {
+        section: 0,
+        text: "Las unidades operativas remiten información de costos de alimentación, materiales y personal. ¿Quién debe ordenar, consolidar y verificar esa información?",
+        options: ["Oficina de Presupuesto de la Entidad", "Responsable del Programa Presupuestal", "DGPP", "Gobierno Local"],
+        answer: "Oficina de Presupuesto de la Entidad",
+        feedback: "La Oficina de Presupuesto conduce técnicamente el proceso presupuestario de la entidad y consolida la información presupuestaria."
+      },
+      {
+        section: 0,
+        text: "Se debe registrar la información generada por las operaciones de ingresos y gastos del servicio. ¿Qué actor realiza esta acción operativa?",
+        options: ["Titular de la Entidad", "Unidad Ejecutora", "DGPP", "Congreso de la República"],
+        answer: "Unidad Ejecutora",
+        feedback: "La Unidad Ejecutora es el nivel descentralizado u operativo del pliego y administra ingresos y gastos públicos."
+      },
+      {
+        section: 0,
+        text: "Se requiere coordinar que los productos del programa presupuestal aseguren servicios efectivos y eficientes para la población objetivo. ¿Quién asume esta función?",
+        options: ["Oficina de Tesorería", "Responsable del Programa Presupuestal", "Unidad Ejecutora", "Oficina de Logística"],
+        answer: "Responsable del Programa Presupuestal",
+        feedback: "El Responsable del Programa Presupuestal gestiona estratégica y operativamente los productos orientados a resultados."
+      },
+      {
+        section: 0,
+        text: "Una consulta técnica sobre la correcta aplicación de una norma presupuestaria debe ser absuelta por el ente rector. ¿Quién corresponde?",
+        options: ["DGPP", "Titular de la Entidad", "Unidad Ejecutora", "Comité comunal"],
+        answer: "DGPP",
+        feedback: "La DGPP emite opinión autorizada en materia presupuestaria de manera exclusiva y excluyente en el Sector Público."
+      },
+      {
+        section: 0,
+        text: "La información de ejecución presupuestaria de los centros de costos debe ser articulada internamente para la formulación institucional. ¿Qué órgano lidera esa articulación técnica?",
+        options: ["Oficina de Presupuesto", "Responsable del Programa Presupuestal", "Proveedor del servicio", "Beneficiarios"],
+        answer: "Oficina de Presupuesto",
+        feedback: "La Oficina de Presupuesto articula la información operativa de la entidad con el marco presupuestario institucional."
+      },
+      {
+        section: 1,
+        text: "La entidad estima necesidades para los próximos tres años, considerando cobertura, metas y marco fiscal. ¿Qué fase corresponde?",
+        options: ["Ejecución", "Programación Multianual", "Evaluación", "Aprobación"],
+        answer: "Programación Multianual",
+        feedback: "La Programación Multianual define una perspectiva de mediano plazo para asignar recursos orientados a resultados."
+      },
+      {
+        section: 1,
+        text: "La Oficina de Presupuesto organiza la información de costos, metas físicas y estructura presupuestaria para preparar la propuesta institucional. ¿Qué fase corresponde?",
+        options: ["Formulación", "Evaluación", "Ejecución", "Servicio de deuda"],
+        answer: "Formulación",
+        feedback: "La Formulación organiza y estructura la información presupuestaria que sustenta la propuesta de presupuesto."
+      },
+      {
+        section: 1,
+        text: "El presupuesto institucional queda formalmente autorizado dentro de la Ley de Presupuesto del Sector Público. ¿Qué fase corresponde?",
+        options: ["Ejecución", "Formulación", "Aprobación", "Programación Multianual"],
+        answer: "Aprobación",
+        feedback: "La Aprobación formaliza el presupuesto autorizado para la entidad."
+      },
+      {
+        section: 1,
+        text: "La Unidad Ejecutora utiliza los créditos presupuestarios aprobados para contratar servicios, adquirir bienes y atender actividades. ¿Qué fase corresponde?",
+        options: ["Evaluación", "Ejecución", "Programación Multianual", "Aprobación"],
+        answer: "Ejecución",
+        feedback: "La Ejecución permite administrar y utilizar los créditos presupuestarios aprobados para atender servicios e intervenciones públicas."
+      },
+      {
+        section: 1,
+        text: "Al cierre del periodo se revisan avances, recursos utilizados y cumplimiento de metas de atención infantil. ¿Qué fase corresponde?",
+        options: ["Evaluación Presupuestaria", "Formulación", "Aprobación", "Programación"],
+        answer: "Evaluación Presupuestaria",
+        feedback: "La Evaluación Presupuestaria analiza el desempeño del presupuesto, los avances y el logro de resultados."
+      },
+      {
+        section: 2,
+        text: "La entidad recibe recursos presupuestarios para financiar el servicio de atención infantil. ¿Cómo se clasifica?",
+        options: ["Gasto público", "Ingreso público", "Clasificador geográfico", "Servicio de deuda"],
+        answer: "Ingreso público",
+        feedback: "Los ingresos públicos financian los gastos necesarios para cumplir los fines institucionales."
+      },
+      {
+        section: 2,
+        text: "Se paga el servicio de alimentación para niñas y niños atendidos por el programa. ¿Cómo se clasifica?",
+        options: ["Ingreso público", "Gasto público", "Fuente de financiamiento", "Clasificador institucional"],
+        answer: "Gasto público",
+        feedback: "Es un gasto público porque representa una erogación con cargo a créditos presupuestarios aprobados."
+      },
+      {
+        section: 2,
+        text: "La entidad registra recursos provenientes de una transferencia autorizada para financiar actividades del programa. ¿Cómo se clasifica?",
+        options: ["Ingreso público", "Gasto de capital", "Gasto público", "Clasificación funcional"],
+        answer: "Ingreso público",
+        feedback: "Es un ingreso público porque constituye un recurso que financia obligaciones presupuestarias."
+      },
+      {
+        section: 2,
+        text: "Se adquiere mobiliario infantil para nuevos locales de atención. ¿Cómo se clasifica?",
+        options: ["Ingreso público", "Gasto público", "Clasificador de ingresos", "Fase de aprobación"],
+        answer: "Gasto público",
+        feedback: "La adquisición de bienes con cargo al presupuesto constituye gasto público."
+      },
+      {
+        section: 3,
+        text: "Se necesita identificar si el gasto corresponde a bienes y servicios, activos no financieros o personal. ¿Qué clasificación corresponde?",
+        options: ["Clasificación Geográfica", "Clasificación Económica", "Clasificación Institucional", "Clasificación Funcional"],
+        answer: "Clasificación Económica",
+        feedback: "La Clasificación Económica ordena el gasto según su naturaleza económica."
+      },
+      {
+        section: 3,
+        text: "Se requiere identificar qué pliego y qué unidad ejecutora realizarán el gasto. ¿Qué clasificación corresponde?",
+        options: ["Clasificación Programática", "Clasificación Institucional", "Clasificación Geográfica", "Clasificación Funcional"],
+        answer: "Clasificación Institucional",
+        feedback: "La Clasificación Institucional permite identificar a las entidades, pliegos y unidades ejecutoras con créditos presupuestarios."
+      },
+      {
+        section: 3,
+        text: "El gasto se vincula con la función social de protección y atención a la población vulnerable. ¿Qué clasificación corresponde?",
+        options: ["Clasificación Funcional", "Clasificación Económica", "Clasificación Geográfica", "Servicio de deuda"],
+        answer: "Clasificación Funcional",
+        feedback: "La Clasificación Funcional agrupa los créditos por función, división funcional y grupo funcional, mostrando las líneas de acción del Estado."
+      },
+      {
+        section: 3,
+        text: "Se necesita vincular el gasto con productos, proyectos y resultados del Programa Presupuestal. ¿Qué clasificación corresponde?",
+        options: ["Clasificación Programática", "Clasificación Institucional", "Clasificación Económica", "Clasificación Geográfica"],
+        answer: "Clasificación Programática",
+        feedback: "La Clasificación Programática permite estructurar el presupuesto por categorías presupuestarias, productos y proyectos orientados a resultados."
+      },
+      {
+        section: 3,
+        text: "El reporte debe mostrar en qué departamento, provincia y distrito se ejecutará el crédito presupuestario. ¿Qué clasificación corresponde?",
+        options: ["Clasificación Económica", "Clasificación Geográfica", "Clasificación Programática", "Clasificación Institucional"],
+        answer: "Clasificación Geográfica",
+        feedback: "La Clasificación Geográfica organiza el presupuesto según el ámbito territorial donde se ejecuta el crédito presupuestario."
+      },
+      {
+        section: 4,
+        text: "El pago de personal operativo, materiales educativos, alimentación y mantenimiento de locales permite la operación regular del servicio. ¿Qué categoría corresponde?",
+        options: ["Servicio de la Deuda", "Gasto de Capital", "Gasto Corriente", "Clasificación Geográfica"],
+        answer: "Gasto Corriente",
+        feedback: "El Gasto Corriente financia el mantenimiento u operación de los servicios que presta el Estado."
+      },
+      {
+        section: 4,
+        text: "La adquisición de mobiliario infantil y equipamiento básico para nuevos locales incrementa la capacidad de atención del servicio. ¿Qué categoría corresponde?",
+        options: ["Gasto Corriente", "Gasto de Capital", "Servicio de la Deuda", "Ingreso público"],
+        answer: "Gasto de Capital",
+        feedback: "El Gasto de Capital se orienta al incremento de la producción o del patrimonio del Estado."
+      },
+      {
+        section: 4,
+        text: "Una entidad debe pagar obligaciones derivadas de deuda pública autorizada. ¿Qué categoría corresponde?",
+        options: ["Gasto Corriente", "Servicio de la Deuda", "Gasto de Capital", "Programación Multianual"],
+        answer: "Servicio de la Deuda",
+        feedback: "El Servicio de la Deuda comprende los gastos destinados al cumplimiento de obligaciones originadas por deuda pública interna o externa."
+      },
+      {
+        section: 4,
+        text: "La contratación de servicios de capacitación para facilitadoras comunales busca mejorar la operación regular del programa. ¿Qué categoría corresponde?",
+        options: ["Gasto Corriente", "Gasto de Capital", "Servicio de la Deuda", "Clasificación Institucional"],
+        answer: "Gasto Corriente",
+        feedback: "Los servicios de capacitación vinculados a la operación del programa corresponden a Gasto Corriente, en tanto financian actividades necesarias para la prestación del servicio."
+      },
+      {
+        section: 4,
+        text: "La compra de equipos nuevos para implementar puntos de atención infantil en distritos priorizados incrementa la capacidad operativa del Estado. ¿Qué categoría corresponde?",
+        options: ["Servicio de la Deuda", "Gasto de Capital", "Gasto Corriente", "Ingreso público"],
+        answer: "Gasto de Capital",
+        feedback: "La adquisición de equipos que incrementan la capacidad operativa o patrimonial corresponde a Gasto de Capital."
+      }
+    ];
+
+    const state = {
+      index: 0,
+      score: 0,
+      selected: null,
+      verified: false,
+      answered: Array(questions.length).fill(false),
+      shuffled: questions.map((question, index) => shuffle(question.options, index + 7))
+    };
+
+    const sectionList = document.querySelector("#sectionList");
+    const currentMetric = document.querySelector("#currentMetric");
+    const scoreMetric = document.querySelector("#scoreMetric");
+    const progressText = document.querySelector("#progressText");
+    const progressBar = document.querySelector("#progressBar");
+    const sectionLabel = document.querySelector("#sectionLabel");
+    const questionCounter = document.querySelector("#questionCounter");
+    const questionText = document.querySelector("#questionText");
+    const optionsNode = document.querySelector("#options");
+    const feedback = document.querySelector("#feedback");
+    const checkBtn = document.querySelector("#checkBtn");
+    const nextBtn = document.querySelector("#nextBtn");
+    const questionCard = document.querySelector("#questionCard");
+    const resultCard = document.querySelector("#resultCard");
+    const finalScore = document.querySelector("#finalScore");
+    const finalPercent = document.querySelector("#finalPercent");
+    const finalLevel = document.querySelector("#finalLevel");
+    const finalMessage = document.querySelector("#finalMessage");
+    const restartBtn = document.querySelector("#restartBtn");
+
+    function shuffle(items, seed) {
+      const values = [...items];
+      let currentSeed = seed * 9301 + 49297;
+      for (let i = values.length - 1; i > 0; i--) {
+        currentSeed = (currentSeed * 233280 + 49297) % 99991;
+        const j = currentSeed % (i + 1);
+        [values[i], values[j]] = [values[j], values[i]];
+      }
+      return values;
+    }
+
+    function renderSections() {
+      sectionList.innerHTML = "";
+      sections.forEach((name, index) => {
+        const item = document.createElement("div");
+        const firstQuestion = questions.findIndex(question => question.section === index);
+        const lastQuestion = questions.map(question => question.section).lastIndexOf(index);
+        item.className = "section-step";
+        if (questions[state.index] && questions[state.index].section === index) item.classList.add("active");
+        if (state.index > lastQuestion || !questions[state.index]) item.classList.add("done");
+        item.textContent = `${index + 1}. ${name}`;
+        item.title = `Preguntas ${firstQuestion + 1} a ${lastQuestion + 1}`;
+        sectionList.appendChild(item);
+      });
+    }
+
+    function renderQuestion() {
+      const question = questions[state.index];
+      state.selected = null;
+      state.verified = false;
+
+      sectionLabel.textContent = `Sección ${question.section + 1}: ${sections[question.section]}`;
+      questionCounter.textContent = `Pregunta ${state.index + 1} de ${questions.length}`;
+      questionText.textContent = question.text;
+      optionsNode.innerHTML = "";
+      feedback.className = "feedback";
+      feedback.innerHTML = "";
+      checkBtn.disabled = false;
+      nextBtn.disabled = true;
+      nextBtn.textContent = state.index === questions.length - 1 ? "Ver resultado" : "Siguiente";
+
+      state.shuffled[state.index].forEach(optionText => {
+        const button = document.createElement("button");
+        button.className = "option";
+        button.type = "button";
+        button.textContent = optionText;
+        button.addEventListener("click", () => selectOption(button, optionText));
+        optionsNode.appendChild(button);
+      });
+
+      updateProgress();
+      renderSections();
+    }
+
+    function selectOption(button, optionText) {
+      if (state.verified) return;
+      state.selected = optionText;
+      [...optionsNode.children].forEach(child => child.classList.remove("selected"));
+      button.classList.add("selected");
+    }
+
+    function verifyAnswer() {
+      const question = questions[state.index];
+      if (!state.selected) {
+        feedback.className = "feedback warn";
+        feedback.innerHTML = "<strong>Selecciona una alternativa</strong>Elige una opción antes de verificar la respuesta.";
+        return;
+      }
+
+      const isCorrect = state.selected === question.answer;
+      state.verified = true;
+      checkBtn.disabled = true;
+      nextBtn.disabled = false;
+
+      if (isCorrect && !state.answered[state.index]) {
+        state.score += 1;
+        state.answered[state.index] = true;
+      }
+
+      [...optionsNode.children].forEach(button => {
+        if (button.textContent === question.answer) button.classList.add("correct");
+        if (button.textContent === state.selected && !isCorrect) button.classList.add("incorrect");
+      });
+
+      feedback.className = `feedback ${isCorrect ? "ok" : "warn"}`;
+      feedback.innerHTML = `<strong>${isCorrect ? "Correcto" : "Revisa el concepto"}</strong>${question.feedback}`;
+      updateProgress();
+    }
+
+    function nextQuestion() {
+      if (!state.verified) return;
+      if (state.index < questions.length - 1) {
+        state.index += 1;
+        renderQuestion();
+        document.querySelector("#questionCard").scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        showResults();
+      }
+    }
+
+    function updateProgress() {
+      const answeredCount = state.index + (state.verified ? 1 : 0);
+      const percent = Math.round((answeredCount / questions.length) * 100);
+      currentMetric.textContent = `${Math.min(state.index + 1, questions.length)} / ${questions.length}`;
+      scoreMetric.textContent = String(state.score);
+      progressText.textContent = `${percent}%`;
+      progressBar.style.width = `${percent}%`;
+    }
+
+    function getLevel(percent) {
+      if (percent >= 90) return "Dominio alto";
+      if (percent >= 70) return "Dominio satisfactorio";
+      if (percent >= 50) return "En proceso";
+      return "Reforzar contenidos";
+    }
+
+    function showResults() {
+      const percent = Math.round((state.score / questions.length) * 100);
+      const level = getLevel(percent);
+      questionCard.classList.remove("active");
+      resultCard.classList.add("active");
+      finalScore.textContent = `${state.score} / ${questions.length}`;
+      finalPercent.textContent = `${percent}%`;
+      finalLevel.textContent = level;
+      finalMessage.textContent = `Has completado el simulador. Tu resultado muestra un nivel de "${level}" en la aplicación de actores, fases, ingresos, gastos, clasificadores y categorías de gasto al caso Cuna Más.`;
+      currentMetric.textContent = `${questions.length} / ${questions.length}`;
+      progressText.textContent = "100%";
+      progressBar.style.width = "100%";
+      renderSections();
+      resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function restart() {
+      state.index = 0;
+      state.score = 0;
+      state.selected = null;
+      state.verified = false;
+      state.answered = Array(questions.length).fill(false);
+      state.shuffled = questions.map((question, index) => shuffle(question.options, index + Math.floor(Date.now() / 1000)));
+      resultCard.classList.remove("active");
+      questionCard.classList.add("active");
+      renderQuestion();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    checkBtn.addEventListener("click", verifyAnswer);
+    nextBtn.addEventListener("click", nextQuestion);
+    restartBtn.addEventListener("click", restart);
+
+    renderQuestion();
+  </script>
+</body>
+</html>
