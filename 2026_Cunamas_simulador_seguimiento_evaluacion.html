@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulador de Seguimiento y Evaluación - Programa Nacional Cuna Más</title>
+  <style>
+    :root{
+      --azul:#12395b; --azul2:#1f6f9e; --celeste:#e6f5fb; --verde:#16805d;
+      --naranja:#f28c28; --rojo:#b42318; --amarillo:#946200; --gris:#667085;
+      --fondo:#f7fafc; --texto:#1d2939; --borde:#d0d5dd; --blanco:#fff;
+      --sombra:0 14px 36px rgba(16,24,40,.12); --radio:8px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--fondo);color:var(--texto);line-height:1.45}
+    button,input,select,textarea{font:inherit}
+    button{border:0;border-radius:var(--radio);background:var(--azul);color:#fff;padding:.78rem 1rem;font-weight:700;cursor:pointer}
+    button:hover{filter:brightness(1.06)}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .secondary{background:#fff;color:var(--azul);border:1px solid var(--borde)}
+    .success{background:var(--verde)}
+    .danger{background:var(--rojo)}
+    .ghost{background:transparent;color:var(--azul);border:1px solid var(--borde)}
+    a:focus,button:focus,input:focus,select:focus,textarea:focus,.choice:focus{outline:3px solid #84caff;outline-offset:2px}
+    .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--borde);box-shadow:0 8px 20px rgba(16,24,40,.06)}
+    .top-inner{max-width:1180px;margin:0 auto;padding:.75rem 1rem;display:grid;grid-template-columns:1.2fr auto;gap:.8rem;align-items:center}
+    .brand{font-weight:800;color:var(--azul);font-size:1rem}
+    .status{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+    .pill{border:1px solid var(--borde);background:#fff;border-radius:999px;padding:.45rem .7rem;font-size:.9rem;white-space:nowrap}
+    .progress{height:10px;background:#e4e7ec;border-radius:999px;overflow:hidden;grid-column:1/-1}
+    .progress span{display:block;height:100%;background:linear-gradient(90deg,var(--verde),var(--azul2));width:0;transition:width .25s}
+    main{max-width:1180px;margin:0 auto;padding:1.2rem 1rem 3rem}
+    .screen,.card,.activity,.summary{background:#fff;border:1px solid var(--borde);border-radius:var(--radio);box-shadow:0 2px 10px rgba(16,24,40,.04)}
+    .screen{padding:1.4rem}
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:1.2rem;align-items:center;min-height:72vh}
+    h1,h2,h3{color:var(--azul);line-height:1.15;margin:.2rem 0 .75rem}
+    h1{font-size:clamp(2rem,5vw,4.2rem)}
+    h2{font-size:1.65rem}
+    h3{font-size:1.12rem}
+    .lead{font-size:1.12rem;max-width:68ch}
+    .grid{display:grid;gap:1rem}
+    .grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .card{padding:1rem}
+    .metric{display:flex;align-items:center;gap:.7rem}
+    .icon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--celeste);color:var(--azul);font-weight:900;flex:0 0 auto}
+    .toolbar{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1rem}
+    .muted{color:#667085}
+    .activity{padding:1.1rem;margin-top:1rem}
+    .question{border-top:1px solid #eef2f6;padding-top:1rem;margin-top:1rem}
+    label{font-weight:700;display:block;margin:.25rem 0}
+    input,select,textarea{width:100%;border:1px solid var(--borde);border-radius:var(--radio);padding:.72rem;background:#fff;color:var(--texto)}
+    textarea{min-height:82px;resize:vertical}
+    table{width:100%;border-collapse:collapse;background:#fff}
+    th,td{padding:.72rem;border-bottom:1px solid #eaecf0;text-align:left;vertical-align:top}
+    th{background:#f2f7fb;color:var(--azul)}
+    .table-wrap{overflow:auto;border:1px solid var(--borde);border-radius:var(--radio)}
+    .feedback{margin-top:.75rem;padding:.8rem;border-radius:var(--radio);background:#f2f4f7;border-left:5px solid var(--gris)}
+    .feedback.ok{background:#ecfdf3;border-left-color:var(--verde)}
+    .feedback.warn{background:#fff7e6;border-left-color:var(--naranja)}
+    .feedback.bad{background:#fef3f2;border-left-color:var(--rojo)}
+    .badge{display:inline-flex;align-items:center;gap:.35rem;border-radius:999px;padding:.28rem .55rem;font-weight:800;font-size:.84rem}
+    .verde{background:#ecfdf3;color:#05603a}.amarillo{background:#fffaeb;color:#854a0e}.rojo{background:#fef3f2;color:#912018}.gris{background:#f2f4f7;color:#475467}
+    .choice-list{display:grid;gap:.7rem}
+    .choice{display:flex;gap:.7rem;align-items:flex-start;border:1px solid var(--borde);border-radius:var(--radio);padding:.8rem;background:#fff;cursor:pointer}
+    .choice input{width:auto;margin-top:.25rem}
+    .sortable{display:grid;gap:.7rem;max-width:560px}
+    .sort-item{display:grid;grid-template-columns:1fr auto auto;gap:.45rem;align-items:center;border:1px solid var(--borde);border-radius:var(--radio);padding:.72rem;background:#fff}
+    .mini-chart{height:220px;display:flex;align-items:end;gap:.6rem;border-left:2px solid var(--borde);border-bottom:2px solid var(--borde);padding:.8rem;margin-top:.8rem}
+    .bar{flex:1;background:linear-gradient(var(--azul2),var(--verde));border-radius:6px 6px 0 0;min-width:34px;position:relative}
+    .bar span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:.78rem;font-weight:800;color:var(--azul);white-space:nowrap}
+    .bar em{position:absolute;top:100%;left:50%;transform:translateX(-50%);font-style:normal;font-size:.75rem;margin-top:.3rem}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(12,27,43,.58);z-index:50;display:none;align-items:center;justify-content:center;padding:1rem}
+    .modal-backdrop.open{display:flex}
+    .modal{background:#fff;border-radius:var(--radio);width:min(1000px,100%);max-height:88vh;overflow:auto;box-shadow:var(--sombra)}
+    .modal-head{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--borde);display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:1rem}
+    .tabs{display:flex;gap:.4rem;flex-wrap:wrap;padding:1rem 1rem 0}
+    .tab{background:#fff;color:var(--azul);border:1px solid var(--borde);padding:.55rem .75rem}
+    .tab.active{background:var(--azul);color:#fff}
+    .tab-panel{padding:1rem}
+    .hide{display:none!important}
+    .result-band{background:linear-gradient(135deg,var(--azul),#0f766e);color:#fff;border-radius:var(--radio);padding:1.2rem}
+    .result-band h2,.result-band h3{color:#fff}
+    .print-only{display:none}
+    @media(max-width:850px){.top-inner,.hero,.grid.two,.grid.three{grid-template-columns:1fr}.status{justify-content:flex-start}.brand{font-size:.95rem}main{padding:.8rem}.screen{padding:1rem}th,td{min-width:150px}.pill{font-size:.82rem}}
+    @media print{.topbar,.toolbar,.modal-backdrop,.no-print{display:none!important}body{background:#fff}main{max-width:none}.screen,.activity,.card{box-shadow:none}.print-only{display:block}}
+  </style>
+</head>
+<body>
+  <header class="topbar" aria-label="Panel superior">
+    <div class="top-inner">
+      <div class="brand">Simulador de Seguimiento y Evaluación - Programa Nacional Cuna Más</div>
+      <div class="status">
+        <span class="pill" id="scorePill">Puntaje: 0 / 430</span>
+        <span class="pill" id="advancePill">Avance: 0%</span>
+        <span class="pill" id="stagePill">Etapa: Bienvenida</span>
+        <button class="secondary" id="caseBtn" type="button">Ver caso completo</button>
+        <button class="ghost" id="resetBtn" type="button">Reiniciar</button>
+      </div>
+      <div class="progress" aria-label="Porcentaje de avance"><span id="progressBar"></span></div>
+    </div>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <div class="modal-backdrop" id="caseModal" role="dialog" aria-modal="true" aria-labelledby="caseTitle">
+    <section class="modal">
+      <div class="modal-head">
+        <h2 id="caseTitle">Caso completo: Unidad Territorial Valle Verde</h2>
+        <button class="secondary" id="closeCaseX" type="button" aria-label="Cerrar caso">X</button>
+      </div>
+      <div class="tabs" id="caseTabs" role="tablist"></div>
+      <div class="tab-panel" id="casePanel"></div>
+      <div class="toolbar" style="padding:0 1rem 1rem">
+        <button class="secondary" id="closeCaseBtn" type="button">Cerrar</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+  "use strict";
+
+  const TOTAL_SCORE = 430;
+  const STORE_KEY = "sim_cuna_mas_estado_v1";
+  const caseData = {
+    target: 98.84,
+    families: [
+      ["Enero",8000,7920,99],["Febrero",8000,7840,98],["Marzo",8000,7200,90],
+      ["Abril",8000,5760,72],["Mayo",8000,6640,83],["Junio",8000,7520,94]
+    ],
+    visits: [
+      ["Enero",32000,31840,99.5],["Febrero",32000,31200,97.5],["Marzo",32000,28000,87.5],
+      ["Abril",32000,22400,70],["Mayo",32000,26240,82],["Junio",32000,30080,94]
+    ],
+    territories: [["Alto Valle",88],["Nueva Esperanza",82],["Santa Rosa",70],["Río Claro",48]],
+    other: [
+      ["Sesiones grupales",744,960,77.5],["Facilitadores capacitados",360,400,90],
+      ["Supervisiones técnicas",780,1200,65],["Familias con registro actualizado",6960,8000,87],
+      ["Comités con vigilancia activa",44,80,55],["Familias satisfechas",82,90,82]
+    ],
+    finance: [["Enero",1200000,1140000,95],["Febrero",1250000,1225000,98],["Marzo",1350000,1296000,96],["Abril",1400000,1330000,95],["Mayo",1550000,1472500,95],["Junio",1650000,1584000,96]]
+  };
+
+  const activities = [
+    {id:1,moment:1,title:"Cálculo de cumplimiento",type:"numeric",max:50},
+    {id:2,moment:1,title:"Clasificación de alertas",type:"alerts",max:40},
+    {id:3,moment:1,title:"Detección de alertas complejas",type:"multi",max:30},
+    {id:4,moment:1,title:"Priorización territorial",type:"order",max:20},
+    {id:5,moment:1,title:"Reporte de seguimiento",type:"report",max:30},
+    {id:6,moment:2,title:"Pregunta central de evaluación",type:"single",max:10},
+    {id:7,moment:2,title:"Clasificación de causas",type:"causes",max:40},
+    {id:8,moment:2,title:"Eficacia, eficiencia, oportunidad y calidad",type:"match",max:20},
+    {id:9,moment:2,title:"Construcción de hallazgos",type:"finding",max:30},
+    {id:10,moment:2,title:"Recomendaciones",type:"recommendations",max:30},
+    {id:11,moment:2,title:"Medidas correctivas",type:"measures",max:30},
+    {id:12,moment:3,title:"Matriz de compromisos",type:"matrix",max:40},
+    {id:13,moment:3,title:"Retroalimentación",type:"stakeholders",max:10},
+    {id:14,moment:3,title:"Mejora continua",type:"pdca",max:20},
+    {id:15,moment:3,title:"Verificación posterior",type:"posterior",max:30}
+  ];
+
+  const defaultState = {
+    started:false, current:0, score:0, alerts:0, correct:0,
+    completed:{}, points:{}, attempts:{}, answers:{}, correctUnits:{}, alertUnits:{}, reviewed:false
+  };
+  let state = loadState();
+  let activeTab = 0;
+
+  const app = document.getElementById("app");
+  const el = id => document.getElementById(id);
+  const pct = n => `${Number(n).toLocaleString("es-PE",{minimumFractionDigits:2,maximumFractionDigits:2})} %`;
+  const money = n => `S/ ${Number(n).toLocaleString("es-PE")}`;
+
+  function loadState(){
+    try { return {...defaultState, ...(JSON.parse(localStorage.getItem(STORE_KEY)) || {})}; }
+    catch(e){ return {...defaultState}; }
+  }
+  function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); updateTop(); }
+  function resetAll(){
+    if(confirm("¿Borrar todo el progreso y comenzar nuevamente?")){
+      localStorage.removeItem(STORE_KEY); state = {...defaultState, completed:{}, points:{}, attempts:{}, answers:{}, correctUnits:{}, alertUnits:{}}; render();
+    }
+  }
+  function updateTop(){
+    const completed = Object.keys(state.completed).length;
+    const advance = Math.round((completed / activities.length) * 100);
+    const activity = activities[state.current];
+    el("scorePill").textContent = `Puntaje: ${state.score} / ${TOTAL_SCORE}`;
+    el("advancePill").textContent = `Avance: ${advance}%`;
+    el("stagePill").textContent = `Etapa: ${state.started ? stageName(activity?.moment) : "Bienvenida"}`;
+    el("progressBar").style.width = `${advance}%`;
+  }
+  function stageName(moment){
+    return moment === 1 ? "Momento 1: seguimiento" : moment === 2 ? "Momento 2: evaluación" : moment === 3 ? "Momento 3: gestión de evidencia" : "Resultados";
+  }
+  function setPoints(id, points, correctUnits=0, alertUnits=0){
+    const old = state.points[id] || 0;
+    const oldCorrect = state.correctUnits[id] || 0;
+    const oldAlerts = state.alertUnits[id] || 0;
+    state.score += points - old;
+    state.points[id] = points;
+    state.correct += correctUnits - oldCorrect;
+    state.alerts += alertUnits - oldAlerts;
+    state.correctUnits[id] = correctUnits;
+    state.alertUnits[id] = alertUnits;
+    state.completed[id] = true;
+    saveState();
+  }
+  function nextActivity(){
+    if(state.current < activities.length - 1){ state.current++; saveState(); render(); }
+    else { renderFinal(); }
+  }
+
+  function render(){
+    updateTop();
+    if(!state.started) return renderWelcome();
+    const activity = activities[state.current];
+    if(!activity) return renderFinal();
+    app.innerHTML = `
+      <section class="screen">
+        <p class="muted">${stageName(activity.moment)} · Actividad ${activity.id} de 15 · ${activity.max} puntos</p>
+        <h1 style="font-size:2rem">${activity.title}</h1>
+        <div id="activityHost"></div>
+        <div class="toolbar">
+          <button class="secondary" type="button" onclick="render()">Restaurar actividad</button>
+          <button id="nextBtn" type="button" ${state.completed[activity.id] ? "" : "disabled"} onclick="nextActivity()">${activity.id === 15 ? "Ver resultados" : "Siguiente"}</button>
+        </div>
+      </section>`;
+    renderActivity(activity);
+    app.focus();
+  }
+
+  function renderWelcome(){
+    app.innerHTML = `
+      <section class="screen hero">
+        <div>
+          <p class="muted">Caso simulado del Servicio de Acompañamiento a Familias - SAF</p>
+          <h1>Simulador de Seguimiento y Evaluación</h1>
+          <p class="lead">Analiza datos, calcula cumplimiento, identifica alertas, formula hallazgos y transforma evidencia en compromisos de mejora para la Unidad Territorial Valle Verde.</p>
+          <div class="toolbar">
+            <button type="button" onclick="startSim()">Iniciar simulador</button>
+            <button class="secondary" type="button" onclick="openCase()">Ver caso completo</button>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="card metric"><span class="icon">%</span><div><strong>Meta 2025</strong><br>${pct(98.84)} de familias con cuatro visitas mensuales.</div></div>
+          <div class="card metric"><span class="icon">!</span><div><strong>Alerta clave</strong><br>Abril cae a 72 % en familias con cuatro visitas.</div></div>
+          <div class="card metric"><span class="icon">S/</span><div><strong>Brecha físico-financiera</strong><br>95,80 % financiero frente a 88,42 % físico.</div></div>
+        </div>
+      </section>`;
+  }
+  function startSim(){ state.started = true; saveState(); render(); }
+
+  function renderActivity(a){
+    const host = el("activityHost");
+    const renderers = {
+      numeric, alerts, multi, order, report, single, causes, match, finding,
+      recommendations, measures, matrix, stakeholders, pdca, posterior
+    };
+    host.innerHTML = "";
+    renderers[a.type](host, a);
+  }
+
+  function numeric(host,a){
+    const qs = [
+      ["n1","Cumplimiento de visitas de abril",70,"Ejecutadas / programadas x 100 = 22 400 / 32 000 x 100."],
+      ["n2","Cumplimiento semestral de visitas",88.42,"169 760 / 192 000 x 100."],
+      ["n3","Cumplimiento de supervisiones",65,"780 / 1 200 x 100."],
+      ["n4","Cumplimiento de vigilancia comunitaria",55,"44 / 80 x 100."],
+      ["n5","Brecha físico-financiera",7.38,"95,80 - 88,42 puntos porcentuales."]
+    ];
+    host.innerHTML = `<p>Calcula cada resultado en porcentaje. Se acepta una tolerancia de ±0,1 puntos porcentuales.</p><div class="grid two">${qs.map(q=>`
+      <div class="card question">
+        <label for="${q[0]}">${q[1]}</label>
+        <input id="${q[0]}" type="number" step="0.01" inputmode="decimal" placeholder="Ej. 70.00">
+        <button type="button" style="margin-top:.6rem" onclick="checkNumeric('${q[0]}',${q[2]},'${q[3].replaceAll("'","\\'")}')">Verificar</button>
+        <div id="fb-${q[0]}" aria-live="polite"></div>
+      </div>`).join("")}</div>`;
+  }
+  window.checkNumeric = function(id, answer, formula){
+    const v = parseFloat((el(id).value || "").replace(",","."));
+    const k = `1-${id}`; state.attempts[k] = (state.attempts[k] || 0) + 1;
+    const attempts = state.attempts[k], fb = el(`fb-${id}`);
+    if(!Number.isFinite(v)){ fb.innerHTML = feedback("bad","Ingresa un número para verificar el cálculo."); saveState(); return; }
+    if(Math.abs(v-answer)<=0.1){
+      const pts = attempts===1?10:attempts===2?7:4;
+      state.answers[k] = pts; saveNumericIfDone();
+      fb.innerHTML = feedback("ok",`Correcto. ${formula} Resultado: ${pct(answer)}. Puntaje de esta pregunta: ${pts}.`);
+    } else if(attempts < 2){
+      fb.innerHTML = feedback("warn","Revisa qué dato va en el numerador y cuál en el denominador. Luego multiplica por 100.");
+    } else if(attempts < 3){
+      fb.innerHTML = feedback("warn",`Pista avanzada: ${formula}`);
+    } else {
+      state.answers[k] = 1; saveNumericIfDone();
+      fb.innerHTML = feedback("bad",`Respuesta mostrada: ${pct(answer)}. Fórmula: ${formula}`);
+    }
+    saveState();
+  };
+  function saveNumericIfDone(){
+    const ids = ["n1","n2","n3","n4","n5"];
+    if(ids.every(id=>state.answers[`1-${id}`])){
+      let pts = ids.reduce((sum,id)=>sum + Number(state.answers[`1-${id}`] || 0), 0);
+      setPoints(1, Math.min(50, pts), ids.length, 3);
+      el("nextBtn").disabled = false;
+    }
+  }
+
+  function alerts(host,a){
+    const rows = [["Enero",99,"Verde"],["Marzo",90,"Amarillo"],["Abril",72,"Rojo"],["Junio",94,"Amarillo"],["Supervisiones",65,"Rojo"],["Vigilancia comunitaria",55,"Rojo"],["Registros actualizados",87,"Amarillo"],["Ejecución financiera",95.8,"Verde"]];
+    host.innerHTML = `<p>Clasifica cada caso con los criterios: verde 95 % o más; amarillo desde 75 % y menor de 95 %; rojo menor de 75 %; gris si no hay información confiable.</p>
+    <div class="table-wrap"><table><thead><tr><th>Caso</th><th>Resultado</th><th>Alerta</th><th>Retroalimentación</th></tr></thead><tbody>${rows.map((r,i)=>`
+      <tr><td>${r[0]}</td><td>${pct(r[1])}</td><td><select id="alert-${i}"><option></option><option>Verde</option><option>Amarillo</option><option>Rojo</option><option>Gris</option></select></td><td id="alert-fb-${i}"></td></tr>`).join("")}</tbody></table></div>
+      <div class="toolbar"><button type="button" onclick="checkAlerts()">Verificar clasificación</button></div>`;
+  }
+  window.checkAlerts = function(){
+    const correct = ["Verde","Amarillo","Rojo","Amarillo","Rojo","Rojo","Amarillo","Verde"];
+    let good = 0;
+    correct.forEach((ans,i)=>{
+      const val = el(`alert-${i}`).value;
+      const ok = val === ans; if(ok) good++;
+      el(`alert-fb-${i}`).innerHTML = ok ? badge(ans) + " Correcto." : `Revisa umbral. Corresponde ${badge(ans)}.`;
+    });
+    setPoints(2, good*5, good, good);
+    el("nextBtn").disabled = false;
+  };
+
+  function multi(host,a){
+    const items = [
+      ["m0","Abril presenta bajo cumplimiento físico.",true],
+      ["m1","La ejecución financiera de abril es alta.",false],
+      ["m2","Existe una brecha físico-financiera.",true],
+      ["m3","Río Claro tiene desempeño crítico.",true],
+      ["m4","La información de mayo presenta retrasos.",true],
+      ["m5","Enero supera la meta.",false],
+      ["m6","La satisfacción de familias está por debajo de la meta.",true],
+      ["m7","La baja vigilancia comunitaria puede afectar la calidad del servicio.",true]
+    ];
+    host.innerHTML = `<p>Selecciona las afirmaciones que deben activar una alerta de gestión.</p><div class="choice-list">${items.map(x=>`
+      <label class="choice"><input type="checkbox" id="${x[0]}"><span>${x[1]}</span></label>`).join("")}</div>
+      <div class="toolbar"><button type="button" onclick="checkMulti()">Verificar alertas</button></div><div id="multiFb"></div>`;
+  }
+  window.checkMulti = function(){
+    const expected = {m0:true,m1:false,m2:true,m3:true,m4:true,m5:false,m6:true,m7:true};
+    let good=0, total=Object.keys(expected).length;
+    Object.entries(expected).forEach(([id,val])=>{ if(el(id).checked===val) good++; });
+    const pts = Math.round((good/total)*30);
+    setPoints(3, pts, good, 6);
+    el("multiFb").innerHTML = feedback(good===total?"ok":"warn",`Lograste ${good} de ${total}. Las alertas también surgen por calidad de datos, concentración territorial y desalineación físico-financiera, no solo por porcentajes bajos.`);
+    el("nextBtn").disabled = false;
+  };
+
+  function order(host,a){
+    const initial = ["Nueva Esperanza","Alto Valle","Río Claro","Santa Rosa"];
+    host.innerHTML = `<p>Ordena las provincias desde la más crítica hasta la menos crítica.</p><div class="sortable" id="orderList">${initial.map((name,i)=>sortItem(name,i)).join("")}</div>
+    <div class="mini-chart">${caseData.territories.map(t=>`<div class="bar" style="height:${t[1]*1.8}px"><span>${t[1]}%</span><em>${t[0].split(" ")[0]}</em></div>`).join("")}</div>
+    <div class="toolbar"><button type="button" onclick="checkOrder(4,['Río Claro','Santa Rosa','Nueva Esperanza','Alto Valle'],20,'orderFb')">Verificar orden</button></div><div id="orderFb"></div>`;
+  }
+  function sortItem(name,i){ return `<div class="sort-item" data-name="${name}"><strong>${name}</strong><button class="secondary" type="button" onclick="moveItem(this,-1)" aria-label="Subir ${name}">↑</button><button class="secondary" type="button" onclick="moveItem(this,1)" aria-label="Bajar ${name}">↓</button></div>`; }
+  window.moveItem = function(btn,dir){
+    const item = btn.closest(".sort-item"), list = item.parentElement;
+    if(dir<0 && item.previousElementSibling) list.insertBefore(item,item.previousElementSibling);
+    if(dir>0 && item.nextElementSibling) list.insertBefore(item.nextElementSibling,item);
+  };
+  window.checkOrder = function(id, expected, max, fbId){
+    const got = [...document.querySelectorAll(".sort-item")].map(x=>x.dataset.name);
+    let good = got.filter((x,i)=>x===expected[i]).length;
+    setPoints(id, Math.round((good/expected.length)*max), good, id===4?good:0);
+    el(fbId).innerHTML = feedback(good===expected.length?"ok":"warn", good===expected.length ? "Orden correcto. Río Claro y Santa Rosa concentran la mayor criticidad." : `Hay ${good} posiciones correctas. El orden técnico debe priorizar el menor resultado.`);
+    el("nextBtn").disabled = false;
+  };
+
+  function report(host,a){
+    host.innerHTML = `<p>Completa un reporte breve. Se validan opciones y palabras clave en las cajas de texto.</p>
+    <div class="grid two">
+      ${selectField("r-ind","Indicador principal",["Familias con cuatro visitas mensuales","Ejecución financiera","Sesiones grupales"])}
+      ${selectField("r-res","Resultado",["72 % en abril y 88,42 % semestral","95,80 % financiero","99 % en enero"])}
+      ${selectField("r-meta","Meta",["98,84 %","75 %","90 %"])}
+      ${selectField("r-estado","Estado",["Alerta crítica / preventiva","Sin alerta","Información no disponible"])}
+      ${textField("r-alerta","Alerta","Incluye abril, brecha o territorio crítico")}
+      ${textField("r-causa","Posible causa","Incluye lluvias, rotación, sobrecarga, sistema o protocolo")}
+      ${selectField("r-resp","Responsable",["Coordinador del SAF","Familias usuarias","Proveedor externo sin rol"])}
+      ${textField("r-medida","Medida inmediata","Incluye recuperación, reprogramación, tablero o supervisión")}
+    </div><div class="toolbar"><button type="button" onclick="checkReport()">Verificar reporte</button></div><div id="reportFb"></div>`;
+  }
+  function selectField(id,label,opts){ return `<div><label for="${id}">${label}</label><select id="${id}"><option></option>${opts.map(o=>`<option>${o}</option>`).join("")}</select></div>`; }
+  function textField(id,label,ph){ return `<div><label for="${id}">${label}</label><textarea id="${id}" placeholder="${ph}"></textarea></div>`; }
+  window.checkReport = function(){
+    const keywords = ["abril","brecha","río","lluvia","rotación","sobrecarga","sistema","protocolo","recuper","reprogram","tablero","supervisi"];
+    let good = 0;
+    ["r-ind","r-res","r-meta","r-estado","r-resp"].forEach(id=>{ if(el(id).selectedIndex===1) good++; });
+    const text = `${el("r-alerta").value} ${el("r-causa").value} ${el("r-medida").value}`.toLowerCase();
+    keywords.forEach(k=>{ if(text.includes(k)) good += .5; });
+    const pts = Math.min(30, Math.round(good/11*30));
+    setPoints(5, pts, Math.round(good), 1);
+    el("reportFb").innerHTML = feedback(pts>=24?"ok":"warn",`Ejemplo técnico: El indicador IOEI.01.02 presenta incumplimiento, con 72 % en abril y 88,42 % semestral frente a la meta de 98,84 %. La alerta se asocia a lluvias, rotación de facilitadores y ausencia de un protocolo de recuperación. Se recomienda un plan semanal de recuperación liderado por el Coordinador del SAF.`);
+    el("nextBtn").disabled = false;
+  };
+
+  function single(host,a){
+    const opts = [
+      "¿Cuánto presupuesto gastó la unidad territorial?",
+      "¿Qué factores explican el incumplimiento de las cuatro visitas mensuales pese a una ejecución financiera superior al 95 %?",
+      "¿Cuántas familias se registraron en el sistema?",
+      "¿Qué provincia tiene mayor población?"
+    ];
+    host.innerHTML = `<p>Elige la pregunta central más útil para evaluar el caso.</p>${radioGroup("q6",opts)}
+    <div class="toolbar"><button type="button" onclick="checkSingle()">Verificar</button></div><div id="singleFb"></div>`;
+  }
+  function radioGroup(name,opts){ return `<div class="choice-list">${opts.map((o,i)=>`<label class="choice"><input type="radio" name="${name}" value="${i}"><span>${String.fromCharCode(65+i)}. ${o}</span></label>`).join("")}</div>`; }
+  window.checkSingle = function(){
+    const v = document.querySelector("input[name=q6]:checked")?.value;
+    const ok = v === "1";
+    setPoints(6, ok?10:3, ok?1:0, 0);
+    el("singleFb").innerHTML = feedback(ok?"ok":"warn", ok ? "Correcto. Una pregunta de evaluación busca causas y relaciones, no solo describir datos." : "Revisa el propósito: evaluar implica explicar por qué ocurre la brecha entre resultados físicos y ejecución financiera.");
+    el("nextBtn").disabled = false;
+  };
+
+  function causes(host,a){
+    const rows = [
+      ["Rotación de facilitadores","Causa directa"],["Lluvias intensas","Factor externo"],["Sobrecarga de acompañantes técnicos","Causa subyacente"],["Falta de protocolo de recuperación","Causa subyacente"],
+      ["Registro tardío","Problema de información"],["Materiales sin adaptación cultural","Causa directa"],["Debilidad de vigilancia comunitaria","Causa subyacente"],["Caída temporal del sistema","Problema de información"]
+    ];
+    host.innerHTML = `<p>Clasifica cada factor según su rol en el desempeño.</p><div class="table-wrap"><table><thead><tr><th>Factor</th><th>Clasificación</th><th>Feedback</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${r[0]}</td><td><select id="cause-${i}"><option></option><option>Causa directa</option><option>Causa subyacente</option><option>Factor externo</option><option>Problema de información</option></select></td><td id="cause-fb-${i}"></td></tr>`).join("")}</tbody></table></div><div class="toolbar"><button type="button" onclick="checkTableSelect(7,'cause',${JSON.stringify(rows.map(r=>r[1]))},40)">Verificar causas</button></div>`;
+  }
+  window.checkTableSelect = function(id,prefix,answers,max){
+    let good=0;
+    answers.forEach((ans,i)=>{ const ok=el(`${prefix}-${i}`).value===ans; if(ok) good++; el(`${prefix}-fb-${i}`).innerHTML = ok ? "Correcto." : `Corresponde: ${ans}.`; });
+    setPoints(id, Math.round(good/answers.length*max), good, 0);
+    el("nextBtn").disabled = false;
+  };
+
+  function match(host,a){
+    const rows = [["Solo se ejecutó 88,42 % de visitas.","Eficacia"],["La ejecución financiera fue 95,80 %.","Eficiencia"],["Las visitas fueron reprogramadas sin anticipación.","Oportunidad"],["Los materiales no estaban adaptados culturalmente.","Calidad"]];
+    host.innerHTML = `<p>Asocia cada situación con el criterio de análisis correspondiente.</p><div class="table-wrap"><table><thead><tr><th>Situación</th><th>Criterio</th><th>Feedback</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${r[0]}</td><td><select id="match-${i}"><option></option><option>Eficacia</option><option>Eficiencia</option><option>Oportunidad</option><option>Calidad</option></select></td><td id="match-fb-${i}"></td></tr>`).join("")}</tbody></table></div><div class="toolbar"><button type="button" onclick='checkTableSelect(8,"match",${JSON.stringify(rows.map(r=>r[1]))},20)'>Verificar asociación</button></div>`;
+  }
+
+  function finding(host,a){
+    const labels = ["Condición","Criterio","Evidencia","Causa","Efecto"];
+    const correct = [
+      "La Unidad Territorial ejecutó 88,42 % de las visitas programadas.",
+      "La meta institucional exige 98,84 % de familias con cuatro visitas mensuales.",
+      "Entre marzo y junio el indicador estuvo por debajo de 95 %, alcanzando 72 % en abril.",
+      "Rotación de facilitadores, lluvias y ausencia de mecanismos de recuperación.",
+      "Discontinuidad del acompañamiento y riesgo de menor fortalecimiento de prácticas familiares."
+    ].sort();
+    const options = [...correct].sort(()=>.5-Math.random());
+    host.innerHTML = `<p>Construye el hallazgo seleccionando el elemento correcto para cada bloque.</p><div class="grid">${labels.map((l,i)=>`${selectField("find-"+i,l,options)}`).join("")}</div><div class="toolbar"><button type="button" onclick="checkFinding()">Verificar hallazgo</button></div><div id="findingFb"></div>`;
+  }
+  window.checkFinding = function(){
+    const answers = [
+      "La Unidad Territorial ejecutó 88,42 % de las visitas programadas.",
+      "La meta institucional exige 98,84 % de familias con cuatro visitas mensuales.",
+      "Entre marzo y junio el indicador estuvo por debajo de 95 %, alcanzando 72 % en abril.",
+      "Rotación de facilitadores, lluvias y ausencia de mecanismos de recuperación.",
+      "Discontinuidad del acompañamiento y riesgo de menor fortalecimiento de prácticas familiares."
+    ];
+    let good=0; answers.forEach((a,i)=>{ if(el(`find-${i}`).value===a) good++; });
+    setPoints(9, Math.round(good/5*30), good, 0);
+    el("findingFb").innerHTML = feedback(good===5?"ok":"warn", good===5 ? "Hallazgo completo: condición, criterio, evidencia, causa y efecto están alineados." : `Tienes ${good} de 5 bloques correctos. Un hallazgo sólido conecta el dato observado con el criterio y sus consecuencias.`);
+    el("nextBtn").disabled = false;
+  };
+
+  function recommendations(host,a){
+    const opts = [
+      ["Implementar un plan de recuperación de visitas.",true],["Crear una relación de facilitadores suplentes.",true],
+      ["Reorganizar cargas y priorizar territorios críticos.",true],["Implementar un tablero semanal de visitas pendientes y recuperadas.",true],
+      ["Reactivar la vigilancia comunitaria.",true],["Adaptar materiales a contextos lingüísticos y culturales.",true],
+      ["Elaborar más informes.",false],["Solicitar mayor presupuesto sin análisis.",false],["Incrementar reuniones administrativas.",false],
+      ["Mantener la programación sin cambios.",false],["Cerrar el servicio en Río Claro.",false],["Registrar todas las visitas al final del semestre.",false]
+    ];
+    host.innerHTML = `<p>Selecciona las recomendaciones pertinentes. Una recomendación debe ser concreta, viable, sustentada y dirigida a un responsable.</p><div class="choice-list">${opts.map((o,i)=>`<label class="choice"><input type="checkbox" id="rec-${i}"><span>${o[0]}</span></label>`).join("")}</div><div class="toolbar"><button type="button" onclick="checkRecommendations()">Verificar recomendaciones</button></div><div id="recFb"></div>`;
+  }
+  window.checkRecommendations = function(){
+    const goodIndexes = [0,1,2,3,4,5]; let good=0,bad=0;
+    for(let i=0;i<12;i++){ const checked=el(`rec-${i}`).checked; if(checked && goodIndexes.includes(i)) good++; if(checked && !goodIndexes.includes(i)) bad++; }
+    const pts = Math.max(0, Math.round((good/6)*30 - bad*4));
+    setPoints(10, pts, good, 0);
+    el("recFb").innerHTML = feedback(pts>=24?"ok":"warn",`Seleccionaste ${good} recomendaciones pertinentes y ${bad} insuficientes. Prioriza acciones que respondan a causas verificadas y tengan responsable claro.`);
+    el("nextBtn").disabled = false;
+  };
+
+  function measures(host,a){
+    const rows = [
+      ["Plan de recuperación de visitas","Identificar semanalmente familias con visitas incompletas"],
+      ["Gestión de suplencias","Activar facilitadores suplentes por zona"],
+      ["Reorganizar cargas","Redistribuir acompañantes según criticidad territorial"],
+      ["Tablero semanal","Monitorear visitas pendientes y recuperadas"],
+      ["Adaptación cultural","Validar materiales con familias y actores locales"]
+    ];
+    const opts = rows.map(r=>r[1]);
+    host.innerHTML = `<p>Vincula cada recomendación con una medida correctiva concreta.</p><div class="table-wrap"><table><thead><tr><th>Recomendación</th><th>Medida</th><th>Feedback</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${r[0]}</td><td><select id="measure-${i}"><option></option>${opts.map(o=>`<option>${o}</option>`).join("")}</select></td><td id="measure-fb-${i}"></td></tr>`).join("")}</tbody></table></div><div class="toolbar"><button type="button" onclick='checkTableSelect(11,"measure",${JSON.stringify(rows.map(r=>r[1]))},30)'>Verificar medidas</button></div>`;
+  }
+
+  function matrix(host,a){
+    const recs = ["Recuperación de visitas","Mejora de supervisión","Reactivación de vigilancia comunitaria"];
+    host.innerHTML = `<p>Completa la matriz de compromisos con opciones coherentes.</p><div class="table-wrap"><table><thead><tr><th>Recomendación</th><th>Acción</th><th>Responsable</th><th>Plazo</th><th>Indicador</th><th>Evidencia</th><th>Estado</th></tr></thead><tbody>${recs.map((r,i)=>`<tr><td>${r}</td>
+      <td>${matrixSelect("mx-a-"+i,["Ejecutar plan semanal de recuperación","Programar asistencia técnica mensual","Convocar comités y registrar acuerdos"])}</td>
+      <td>${matrixSelect("mx-r-"+i,["Coordinador del SAF","Especialista de supervisión","Comités de Gestión"])}</td>
+      <td>${matrixSelect("mx-p-"+i,["30 días","45 días","60 días"])}</td>
+      <td>${matrixSelect("mx-i-"+i,["% de familias pendientes que recuperan visitas","% de supervisiones ejecutadas","% de comités con vigilancia activa"])}</td>
+      <td>${matrixSelect("mx-e-"+i,["Reporte de visitas","Actas de supervisión","Actas de vigilancia"])}</td>
+      <td>${matrixSelect("mx-s-"+i,["Pendiente","En proceso","Completado"])}</td></tr>`).join("")}</tbody></table></div><div class="toolbar"><button type="button" onclick="checkMatrix()">Verificar matriz</button></div><div id="matrixFb"></div>`;
+  }
+  function matrixSelect(id,opts){ return `<select id="${id}"><option></option>${opts.map(o=>`<option>${o}</option>`).join("")}</select>`; }
+  window.checkMatrix = function(){
+    let good=0; for(let i=0;i<3;i++){ ["a","r","p","i","e","s"].forEach(k=>{ if(el(`mx-${k}-${i}`).selectedIndex>0) good++; }); }
+    const coherent = el("mx-a-0").selectedIndex===1 && el("mx-r-0").selectedIndex===1 && el("mx-i-0").selectedIndex===1 && el("mx-e-0").selectedIndex===1;
+    let pts = Math.round(good/18*32) + (coherent?8:0);
+    setPoints(12, pts, Math.round(good/2), 0);
+    el("matrixFb").innerHTML = feedback(pts>=32?"ok":"warn", coherent ? "La matriz es coherente: acción, responsable, indicador y evidencia permiten seguimiento." : "La matriz debe conectar recomendación, acción, responsable, plazo, indicador y evidencia verificable.");
+    el("nextBtn").disabled = false;
+  };
+
+  function stakeholders(host,a){
+    const people = ["Dirección Ejecutiva","Unidad Técnica de Atención Integral","Unidad Territorial","Facilitadores","Comités de Gestión","Familias usuarias","Gobiernos locales"];
+    host.innerHTML = `<p>Selecciona quiénes deben participar en la retroalimentación.</p><div class="choice-list">${people.map((p,i)=>`<label class="choice"><input type="checkbox" id="st-${i}"><span>${p}</span></label>`).join("")}</div><div class="toolbar"><button type="button" onclick="checkStakeholders()">Verificar participantes</button></div><div id="stakeFb"></div>`;
+  }
+  window.checkStakeholders = function(){
+    let good=0; for(let i=0;i<7;i++) if(el(`st-${i}`).checked) good++;
+    setPoints(13, good===7?10:Math.round(good/7*8), good, 0);
+    el("stakeFb").innerHTML = feedback(good===7?"ok":"warn","La retroalimentación debe incluir responsables, ejecutores y usuarios del servicio para que la mejora sea viable y legítima.");
+    el("nextBtn").disabled = false;
+  };
+
+  function pdca(host,a){
+    const initial = ["Calcular indicadores","Corregir cargas y recuperar visitas","Revisar metas y programar rutas","Ejecutar visitas"];
+    host.innerHTML = `<p>Ordena las acciones según el ciclo Planificar, Hacer, Verificar, Actuar.</p><div class="sortable" id="pdcaList">${initial.map(sortItem).join("")}</div><div class="toolbar"><button type="button" onclick="checkOrder(14,['Revisar metas y programar rutas','Ejecutar visitas','Calcular indicadores','Corregir cargas y recuperar visitas'],20,'pdcaFb')">Verificar ciclo</button></div><div id="pdcaFb"></div>`;
+  }
+
+  function posterior(host,a){
+    host.innerHTML = `<p>Resultados de agosto: familias con cuatro visitas 98,90 %, visitas ejecutadas 99,10 %, supervisiones 93 %, registros oportunos 97 %, vigilancia comunitaria 85 %, satisfacción 91 %, brecha físico-financiera 3,20 puntos.</p>
+    ${selectField("post-1","¿Puede cerrarse la alerta del indicador principal?",["Sí, supera la meta aunque debe verificarse sostenibilidad","No, porque toda alerta debe quedar abierta un año","Sí, sin necesidad de seguimiento"])}
+    <fieldset class="card"><legend><strong>¿Qué indicador sigue requiriendo atención?</strong></legend>
+      <label class="choice"><input type="checkbox" id="post-sup">Supervisiones técnicas</label>
+      <label class="choice"><input type="checkbox" id="post-vig">Vigilancia comunitaria</label>
+      <label class="choice"><input type="checkbox" id="post-reg">Registros oportunos</label>
+    </fieldset>
+    <fieldset class="card"><legend><strong>¿Qué medida debería institucionalizarse?</strong></legend>
+      <label class="choice"><input type="checkbox" id="post-tab">Tablero semanal</label>
+      <label class="choice"><input type="checkbox" id="post-pro">Protocolo de recuperación</label>
+      <label class="choice"><input type="checkbox" id="post-supl">Gestión de suplencias</label>
+      <label class="choice"><input type="checkbox" id="post-fin">Solo mayor presupuesto</label>
+    </fieldset>
+    <div class="toolbar"><button type="button" onclick="checkPosterior()">Verificar cierre</button></div><div id="posteriorFb"></div>`;
+  }
+  window.checkPosterior = function(){
+    let pts=0, good=0;
+    if(el("post-1").selectedIndex===1){ pts+=10; good++; }
+    if(el("post-sup").checked || el("post-vig").checked){ pts+=10; good++; }
+    if(el("post-tab").checked || el("post-pro").checked || el("post-supl").checked){ pts+=10; good++; }
+    if(el("post-reg").checked || el("post-fin").checked) pts-=4;
+    pts = Math.max(0, pts);
+    setPoints(15, pts, good, 1);
+    el("posteriorFb").innerHTML = feedback(pts>=24?"ok":"warn","La alerta principal puede cerrarse con cautela porque supera la meta, pero supervisiones y vigilancia aún requieren seguimiento. Conviene institucionalizar tablero, protocolo y suplencias.");
+    el("nextBtn").disabled = false;
+  };
+
+  function feedback(type,msg){ return `<div class="feedback ${type}" role="status">${msg}</div>`; }
+  function badge(name){
+    const cls = name.toLowerCase();
+    const icon = name==="Verde"?"✓":name==="Amarillo"?"!":name==="Rojo"?"●":"?";
+    return `<span class="badge ${cls}">${icon} ${name}</span>`;
+  }
+
+  function renderFinal(){
+    const percent = Math.round((state.score / TOTAL_SCORE) * 100);
+    const level = percent>=90 ? "Gestor estratégico destacado" : percent>=75 ? "Analista competente" : percent>=60 ? "Analista en desarrollo" : "Requiere reforzar conceptos";
+    const strengths = state.score>=300 ? "Buena lectura de indicadores, alertas y recomendaciones accionables." : "Has avanzado en reconocer alertas y usar evidencia del caso.";
+    const reinforce = percent>=75 ? "Sostener el análisis causal y la verificación posterior." : "Practicar cálculo de cumplimiento, clasificación de alertas y formulación de hallazgos.";
+    app.innerHTML = `<section class="screen">
+      <div class="result-band">
+        <p>Resultados finales</p><h2>${level}</h2>
+        <p>Puntaje total: <strong>${state.score} / ${TOTAL_SCORE}</strong> · Porcentaje: <strong>${percent}%</strong></p>
+      </div>
+      <div class="grid two" style="margin-top:1rem">
+        <div class="card"><h3>Resumen</h3><p>Alertas identificadas: <strong>${state.alerts}</strong></p><p>Respuestas correctas o parcialmente correctas: <strong>${state.correct}</strong></p></div>
+        <div class="card"><h3>Retroalimentación</h3><p><strong>Fortalezas:</strong> ${strengths}</p><p><strong>Aspectos por reforzar:</strong> ${reinforce}</p><p><strong>Recomendación de estudio:</strong> repasa umbrales de alerta, brecha físico-financiera, hallazgos y matriz de compromisos.</p></div>
+      </div>
+      <div class="toolbar no-print">
+        <button type="button" onclick="resetAll()">Reintentar</button>
+        <button class="secondary" type="button" onclick="reviewAnswers()">Revisar respuestas</button>
+        <button class="secondary" type="button" onclick="window.print()">Imprimir resultados</button>
+        <button class="secondary" type="button" onclick="exportSummary('txt')">Exportar .txt</button>
+        <button class="secondary" type="button" onclick="exportSummary('json')">Exportar .json</button>
+      </div>
+      <div id="reviewHost"></div>
+    </section>`;
+    state.current = activities.length; saveState(); app.focus();
+  }
+  window.reviewAnswers = function(){
+    el("reviewHost").innerHTML = `<div class="activity"><h3>Revisión rápida</h3><ol>${activities.map(a=>`<li>Actividad ${a.id}: ${a.title}. Puntaje obtenido: <strong>${state.points[a.id] || 0} / ${a.max}</strong>.</li>`).join("")}</ol></div>`;
+  };
+  window.exportSummary = function(type){
+    const data = {simulador:"Simulador de Seguimiento y Evaluación - Cuna Más", fecha:new Date().toISOString(), puntaje:state.score, total:TOTAL_SCORE, porcentaje:Math.round(state.score/TOTAL_SCORE*100), actividades:state.points};
+    const text = type==="json" ? JSON.stringify(data,null,2) : Object.entries(data).map(([k,v])=>`${k}: ${typeof v==="object"?JSON.stringify(v):v}`).join("\n");
+    const blob = new Blob([text], {type:"text/plain;charset=utf-8"});
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `resultados_cuna_mas.${type}`; a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  function openCase(){ el("caseModal").classList.add("open"); renderCaseTab(0); document.querySelector(".tab.active")?.focus(); }
+  function closeCase(){ el("caseModal").classList.remove("open"); el("caseBtn").focus(); }
+  window.openCase = openCase; window.closeCase = closeCase; window.resetAll = resetAll;
+  function renderCaseTabs(){
+    const tabs = ["Contexto","Marco estratégico","Metas","Datos mensuales","Información cualitativa","Fórmulas"];
+    el("caseTabs").innerHTML = tabs.map((t,i)=>`<button class="tab ${i===activeTab?"active":""}" role="tab" aria-selected="${i===activeTab}" type="button" onclick="renderCaseTab(${i})">${t}</button>`).join("");
+  }
+  function renderCaseTab(i){
+    activeTab = i; renderCaseTabs();
+    const html = [
+      `<h3>Contexto</h3><p>La Unidad Territorial Valle Verde presta el SAF en Alto Valle, Nueva Esperanza, Santa Rosa y Río Claro. En el primer semestre de 2025 se programó atender a 8 000 familias activas, con cuatro visitas domiciliarias mensuales por familia.</p>`,
+      `<h3>Marco estratégico</h3><p><strong>OEI.01:</strong> Mejorar el cuidado y la asistencia a servicios de educación temprana y salud de niñas, niños y gestantes en pobreza, pobreza extrema y vulnerabilidad.</p><p><strong>IOEI.01.02:</strong> Porcentaje de familias atendidas mediante SAF que recibieron cuatro visitas en el mes. Meta 2025: ${pct(98.84)}.</p><p><strong>AEI.01.02:</strong> Acompañamiento familiar oportuno para fortalecer capacidades orientadas al desarrollo integral.</p>`,
+      `<h3>Metas</h3><ul><li>Familias activas: 8 000.</li><li>Visitas domiciliarias programadas: 192 000.</li><li>Sesiones grupales: 960.</li><li>Facilitadores capacitados: 400.</li><li>Supervisiones técnicas: 1 200.</li><li>Ejecución financiera prevista: ${money(8400000)}.</li></ul>`,
+      `<h3>Datos mensuales</h3>${table(["Mes","Activas","4 visitas","Resultado"],caseData.families)}<h3>Visitas domiciliarias</h3>${table(["Mes","Programadas","Ejecutadas","Cumplimiento"],caseData.visits)}<h3>Territorios de abril</h3>${table(["Provincia","Resultado"],caseData.territories)}`,
+      `<h3>Información cualitativa</h3><ol><li>40 facilitadores dejaron temporalmente el servicio.</li><li>Lluvias intensas interrumpieron 28 centros poblados durante tres semanas.</li><li>30 % de acompañantes tenía carga superior a la recomendada.</li><li>65 % de facilitadores recibió materiales oportunamente.</li><li>El sistema estuvo fuera de servicio nueve días en marzo.</li><li>18 % de visitas de mayo se registró con más de 15 días de retraso.</li><li>24 % de familias indicó reprogramaciones sin anticipación.</li><li>35 % de familias en zonas de lengua originaria indicó materiales no adaptados.</li><li>44 de 80 comités realizaron vigilancia comunitaria.</li><li>En abril se ejecutó 95 % del presupuesto, pero solo 70 % de visitas.</li><li>No existía protocolo común para recuperar visitas suspendidas.</li></ol>`,
+      `<h3>Fórmulas y criterios</h3><ul><li>Cumplimiento = ejecutado / programado x 100.</li><li>Indicador de familias = familias con cuatro visitas / familias activas x 100.</li><li>Brecha físico-financiera = ejecución financiera - ejecución física.</li><li>Verde: 95 % o más. Amarillo: desde 75 % y menor de 95 %. Rojo: menor de 75 %. Gris: información no disponible o no confiable.</li></ul>`
+    ];
+    el("casePanel").innerHTML = html[i];
+  }
+  function table(headers,rows){
+    return `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${typeof c==="number" && c<101 ? pct(c) : c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  }
+
+  el("caseBtn").addEventListener("click", openCase);
+  el("closeCaseX").addEventListener("click", closeCase);
+  el("closeCaseBtn").addEventListener("click", closeCase);
+  el("resetBtn").addEventListener("click", resetAll);
+  el("caseModal").addEventListener("click", e=>{ if(e.target.id==="caseModal") closeCase(); });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape" && el("caseModal").classList.contains("open")) closeCase(); });
+
+  render();
+  </script>
+</body>
+</html>
